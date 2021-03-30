@@ -79,10 +79,8 @@ func readConfiguration(fileName string) (config *Config, err error) {
 	// map environment variables to yaml values
 	viper.BindEnv("exchange.NAME", "NAME")
 	viper.BindEnv("exchange.MARKET", "MARKET")
-	viper.BindEnv("exchange.API_KEY", "API_KEY")
-	viper.BindEnv("exchange.API_SECRET", "API_SECRET")
 
-	viper.BindEnv("database.POSTGRES_DATABASE", "POSTGRES_DATABASE")
+	viper.BindEnv("database.POSTGRES_DB", "POSTGRES_DB")
 	viper.BindEnv("database.POSTGRES_USERNAME", "POSTGRES_USERNAME")
 	viper.BindEnv("database.POSTGRES_PASSWORD", "POSTGRES_PASSWORD")
 	viper.BindEnv("database.POSTGRES_SERVER", "POSTGRES_SERVER")
@@ -110,12 +108,6 @@ func readConfiguration(fileName string) (config *Config, err error) {
 func validateExchangeConfig(config *Config) {
 	if config.Exchange == nil {
 		panic("[config][validateExchangeConfig] Exchange is not configured")
-	}
-	if config.Exchange.APIKey == "" {
-		panic("[config][validateExchangeConfig] Exchange API Key is not configured")
-	}
-	if config.Exchange.APISecret == "" {
-		panic("[config][validateExchangeConfig] Exchange API Key is not configured")
 	}
 	if config.Exchange.Name == "" {
 		panic("[config][validateExchangeConfig] Exchange Name is not configured")

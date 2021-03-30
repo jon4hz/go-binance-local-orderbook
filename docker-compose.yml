@@ -1,6 +1,20 @@
 ---
 version: '3.5'
 services:
+  orderbook:
+    build:
+      context: .
+    container_name: orderbook
+    hostname: orderbook
+    restart: unless-stopped
+    environment:
+      NAME: binance
+      MARKET: BTCUSDT
+      POSTGRES_DATABASE: orderbook
+      POSTGRES_SERVER: orderbook_db
+      POSTGRES_PASSWORD: orderbook
+      POSTGRES_USER: orderbook
+
   orderbook_db:
     image: postgres:13
     container_name: orderbook_db
