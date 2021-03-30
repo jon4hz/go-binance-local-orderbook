@@ -270,7 +270,7 @@ func TestConfigWithEnvVariablesInvalidExchange(t *testing.T) {
 func TestConfigWithoutDatabaseConfig(t *testing.T) {
 	defer func() { recover() }()
 	// unset all possible env vars
-	vars := []string{"NAME", "MARKET", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_SERVER", "POSTGRES_PORT"}
+	vars := [7]string{"NAME", "MARKET", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_SERVER", "POSTGRES_PORT"}
 	var varSet bool
 	for i := 0; i < len(vars); i++ {
 		_, varSet = os.LookupEnv(vars[i])
@@ -290,7 +290,7 @@ func TestConfigWithoutDatabaseConfig(t *testing.T) {
 func TestConfigReadFromFile(t *testing.T) {
 
 	// unset all possible env vars
-	vars := []string{"NAME", "MARKET", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_SERVER", "POSTGRES_PORT"}
+	vars := [7]string{"NAME", "MARKET", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_SERVER", "POSTGRES_PORT"}
 	var varSet bool
 	for i := 0; i < len(vars); i++ {
 		_, varSet = os.LookupEnv(vars[i])
@@ -308,7 +308,7 @@ func TestConfigReadFromFile(t *testing.T) {
 func TestConfigReadFromInvalidFile(t *testing.T) {
 
 	// unset all possible env vars
-	vars := []string{"NAME", "MARKET", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_SERVER", "POSTGRES_PORT"}
+	vars := [7]string{"NAME", "MARKET", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_SERVER", "POSTGRES_PORT"}
 	var varSet bool
 	for i := 0; i < len(vars); i++ {
 		_, varSet = os.LookupEnv(vars[i])
