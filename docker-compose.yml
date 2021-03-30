@@ -10,7 +10,7 @@ services:
     environment:
       NAME: binance
       MARKET: BTCUSDT
-      POSTGRES_DATABASE: orderbook
+      POSTGRES_DB: orderbook
       POSTGRES_SERVER: orderbook_db
       POSTGRES_PASSWORD: orderbook
       POSTGRES_USER: orderbook
