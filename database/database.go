@@ -1,5 +1,13 @@
 package database
 
+import (
+	"context"
+	"fmt"
+	"os"
+
+	"github.com/jackc/pgx/v4"
+)
+
 type Config struct {
 	DBName     string `mapstructure:"POSTGRES_DATABASE"`
 	DBUsername string `mapstructure:"POSTGRES_USERNAME"`
@@ -8,6 +16,11 @@ type Config struct {
 	DBPort     string `mapstructure:"POSTGRES_PORT"`
 }
 
-func InitDatabase() {
-
+func InitDatabase(*Config) {
+	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+	defer conn.Close(context.Background())
 }
