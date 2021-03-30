@@ -35,8 +35,9 @@ var (
 )
 
 type Config struct {
-	Exchange *exchange.Config `mapstructure:"exchange"`
-	Database *database.Config `mapstructure:"database"`
+	Exchange      *exchange.Config `mapstructure:"exchange"`
+	Database      *database.Config `mapstructure:"database"`
+	DeleteOldSnap bool             `mapstructure:"deleteOldSnap"`
 }
 
 func Get() *Config {
@@ -75,6 +76,7 @@ func readConfiguration(fileName string) (config *Config, err error) {
 
 	// set defaults
 	viper.SetDefault("database.POSTGRES_PORT", "5432")
+	viper.SetDefault("deleteOldSnap", true)
 
 	// map environment variables to yaml values
 	viper.BindEnv("exchange.NAME", "NAME")
@@ -85,6 +87,8 @@ func readConfiguration(fileName string) (config *Config, err error) {
 	viper.BindEnv("database.POSTGRES_PASSWORD", "POSTGRES_PASSWORD")
 	viper.BindEnv("database.POSTGRES_SERVER", "POSTGRES_SERVER")
 	viper.BindEnv("database.POSTGRES_PORT", "POSTGRES_PORT")
+
+	viper.BindEnv("deleteOldSnap", "DeleteOldSnap")
 
 	viper.AutomaticEnv()
 
@@ -100,6 +104,7 @@ func readConfiguration(fileName string) (config *Config, err error) {
 	if err == nil {
 		validateExchangeConfig(config)
 		validateDatabaseConfig(config)
+		validateOtherConfig(config)
 	}
 
 	return
@@ -141,10 +146,17 @@ func validateDatabaseConfig(config *Config) {
 	/* if config.Database.DBPort == "" {
 		panic("[config][validateDatabaseConfig] Database Port is not configured")
 	} */
-	if config.Database.DBUsername == "" {
-		panic("[config][validateDatabaseConfig] Database Username is not configured")
+	if config.Database.DBUser == "" {
+		panic("[config][validateDatabaseConfig] Database User is not configured")
 	}
 	if config.Database.DBServer == "" {
 		panic("[config][validateDatabaseConfig] Database Server is not configured")
 	}
+}
+
+func validateOtherConfig(config *Config) {
+	// Will never happen, DeleteOldSnap has default value (true)
+	/* if !config.DeleteOldSnap {
+		panic("[config][validateOtherConfig] DeleteOldSnap is not configured")
+	} */
 }

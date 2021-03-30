@@ -8,3 +8,4 @@ database:
   POSTGRES_USER: user
   POSTGRES_SERVER: localhost
   POSTGRES_PASSWORD: passwd
+deleteOldSnap: true

@@ -35,6 +35,8 @@ func TestConfigWithEnvVariables(t *testing.T) {
 	os.Setenv("POSTGRES_SERVER", "localhost")
 	os.Setenv("POSTGRES_PORT", "5432")
 
+	os.Setenv("DeleteOldSnap", "true")
+
 	err := Load("")
 	if err != nil {
 		t.Error(fmt.Sprintf("Couldn't read variables from environment: %s", err))
