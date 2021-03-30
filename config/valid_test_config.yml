@@ -1,0 +1,10 @@
+exchange:
+  NAME: binance
+  API_KEY: asdfasdf
+  API_SECRET: asdfasdfasdf
+  MARKET: BTCUSDT
+database:
+  POSTGRES_DATABASE: orderbook
+  POSTGRES_USERNAME: user
+  POSTGRES_SERVER: localhost
+  POSTGRES_PASSWORD: passwd

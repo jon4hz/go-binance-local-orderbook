@@ -4,6 +4,8 @@ package config
 
 import (
 	"errors"
+	"fmt"
+	"io/fs"
 	"log"
 	"os"
 
@@ -14,8 +16,6 @@ import (
 
 const (
 	DefaultConfigurationFilePath = "config/config.yml"
-
-	DefaultFallbackConfigurationFilePath = "config/config.yml"
 )
 
 var (
@@ -47,12 +47,8 @@ func Get() *Config {
 }
 
 func Load(configFile string) error {
-	log.Printf("[config][Load] Reading configuration from configFile=%s", configFile)
 	cfg, err := readConfiguration(configFile)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return ErrConfigFileNotFound
-		}
 		return err
 	}
 	config = cfg
@@ -60,8 +56,22 @@ func Load(configFile string) error {
 }
 
 func readConfiguration(fileName string) (config *Config, err error) {
-	viper.SetConfigFile(fileName)
+
 	viper.SetConfigType("yaml")
+
+	// check if file exists
+	var readFromFile bool
+
+	var succ fs.FileInfo
+	succ, err = os.Stat(fileName)
+	if succ != nil && !(os.IsNotExist(err)) {
+		viper.SetConfigFile(fileName)
+		log.Printf("[config][Load] Reading configuration from configFile=%s", fileName)
+		readFromFile = true
+	} else {
+		readFromFile = false
+		log.Print("[config][Load] Reading configuration from environment vars")
+	}
 
 	// set defaults
 	viper.SetDefault("database.POSTGRES_PORT", "5432")
@@ -80,14 +90,19 @@ func readConfiguration(fileName string) (config *Config, err error) {
 
 	viper.AutomaticEnv()
 
-	err = viper.ReadInConfig()
-	if err != nil {
-		return
+	if readFromFile {
+		err = viper.ReadInConfig()
+		if err != nil {
+			return
+		}
 	}
+
 	err = viper.Unmarshal(&config)
 
-	validateExchangeConfig(config)
-	validateDatabaseConfig(config)
+	if err == nil {
+		validateExchangeConfig(config)
+		validateDatabaseConfig(config)
+	}
 
 	return
 }
@@ -104,6 +119,15 @@ func validateExchangeConfig(config *Config) {
 	}
 	if config.Exchange.Name == "" {
 		panic("[config][validateExchangeConfig] Exchange Name is not configured")
+	} else {
+		switch config.Exchange.Name {
+		case
+			"binance",
+			"binance-futures":
+			// pass
+		default:
+			panic(fmt.Sprintf("[config][validateExchangeConfig] Exchange Name can't be %s", config.Exchange.Name))
+		}
 	}
 	if config.Exchange.Market == "" {
 		panic("[config][validateExchangeConfig] Exchange Market is not configured")
@@ -111,18 +135,20 @@ func validateExchangeConfig(config *Config) {
 }
 
 func validateDatabaseConfig(config *Config) {
-	if config.Database == nil {
+	// config.Database always exists, since config.Database.Port has a default value
+	/* if config.Database == nil {
 		panic("[config][validateDatabaseConfig] Database is not configured")
-	}
+	} */
 	if config.Database.DBName == "" {
 		panic("[config][validateDatabaseConfig] Database Name is not configured")
 	}
 	if config.Database.DBPassword == "" {
 		panic("[config][validateDatabaseConfig] Database Password is not configured")
 	}
-	if config.Database.DBPort == "" {
+	// config.Database.DBPort has a default value and can't be ""
+	/* if config.Database.DBPort == "" {
 		panic("[config][validateDatabaseConfig] Database Port is not configured")
-	}
+	} */
 	if config.Database.DBUsername == "" {
 		panic("[config][validateDatabaseConfig] Database Username is not configured")
 	}
