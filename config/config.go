@@ -30,6 +30,8 @@ var (
 
 	// ErrInvalidSecurityConfig is an error returned when the security configuration is invalid
 	ErrInvalidSecurityConfig = errors.New("invalid security configuration")
+
+	config *Config
 )
 
 type Config struct {
@@ -37,19 +39,27 @@ type Config struct {
 	Database *database.Config `mapstructure:"database"`
 }
 
-func Load(configFile string) (Config, error) {
+func Get() *Config {
+	if config == nil {
+		panic(ErrConfigNotLoaded)
+	}
+	return config
+}
+
+func Load(configFile string) error {
 	log.Printf("[config][Load] Reading configuration from configFile=%s", configFile)
 	cfg, err := readConfiguration(configFile)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return cfg, ErrConfigFileNotFound
+			return ErrConfigFileNotFound
 		}
-		return cfg, err
+		return err
 	}
-	return cfg, nil
+	config = cfg
+	return nil
 }
 
-func readConfiguration(fileName string) (config Config, err error) {
+func readConfiguration(fileName string) (config *Config, err error) {
 	viper.SetConfigFile(fileName)
 	viper.SetConfigType("yaml")
 
@@ -82,7 +92,7 @@ func readConfiguration(fileName string) (config Config, err error) {
 	return
 }
 
-func validateExchangeConfig(config Config) {
+func validateExchangeConfig(config *Config) {
 	if config.Exchange == nil {
 		panic("[config][validateExchangeConfig] Exchange is not configured")
 	}
@@ -100,7 +110,7 @@ func validateExchangeConfig(config Config) {
 	}
 }
 
-func validateDatabaseConfig(config Config) {
+func validateDatabaseConfig(config *Config) {
 	if config.Database == nil {
 		panic("[config][validateDatabaseConfig] Database is not configured")
 	}

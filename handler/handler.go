@@ -15,14 +15,14 @@ var (
 	Prev_u       int64
 )
 
-func HandleWebsocket(config config.Config) {
+func HandleWebsocket(config *config.Config) {
 	wsDepthHandler := func(event *binance.WsDepthEvent) {
 		BigU = event.FirstUpdateID
 		SmallU = event.UpdateID
 		// first time
 		if Prev_u == 0 {
 			Prev_u = SmallU
-			snap, err := downloadSnapshot(config)
+			snap, err := downloadSnapshot(*config)
 			if err != nil {
 				panic("Error while downloading the snapshot")
 			}

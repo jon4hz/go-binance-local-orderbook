@@ -14,17 +14,16 @@ func main() {
 	handler.HandleWebsocket(config)
 }
 
-func loadConfiguration() config.Config {
+func loadConfiguration() *config.Config {
 	var err error
-	var cfg config.Config
 	customConfigFile := os.Getenv("CONFIG_FILE")
 	if len(customConfigFile) > 0 {
-		cfg, err = config.Load(customConfigFile)
+		err = config.Load(customConfigFile)
 	} else {
-		cfg, err = config.Load(config.DefaultConfigurationFilePath)
+		err = config.Load(config.DefaultConfigurationFilePath)
 	}
 	if err != nil {
 		panic(err)
 	}
-	return cfg
+	return config.Get()
 }
