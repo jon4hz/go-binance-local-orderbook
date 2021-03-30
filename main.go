@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/jon4hz/go-binance-local-orderbook/config"
-	"github.com/jon4hz/go-binance-local-orderbook/handler/binance"
+	"github.com/jon4hz/go-binance-local-orderbook/exchange/binance"
 	"github.com/jon4hz/go-binance-local-orderbook/watchdog"
 )
 

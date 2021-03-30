@@ -1,0 +1,15 @@
+---
+version: '3.5'
+services:
+  orderbook_db:
+    image: postgres:13
+    container_name: orderbook_db
+    hostname: orderbook_db
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:5432:5432
+    environment:
+      POSTGRES_DB: orderbook
+      POSTGRES_PASSWORD: orderbook
+      POSTGRES_USER: orderbook
+    command: postgres -c shared_buffers=256MB -c max_connections=2000

@@ -6,26 +6,26 @@ import (
 
 	"github.com/adshao/go-binance/v2"
 	"github.com/jon4hz/go-binance-local-orderbook/config"
-	"github.com/jon4hz/go-binance-local-orderbook/handler"
+	"github.com/jon4hz/go-binance-local-orderbook/exchange"
 )
 
 func HandleWebsocket(config *config.Config) {
 	wsDepthHandler := func(event *binance.WsDepthEvent) {
-		handler.BigU = event.FirstUpdateID
-		handler.SmallU = event.UpdateID
+		exchange.BigU = event.FirstUpdateID
+		exchange.SmallU = event.UpdateID
 		// first time
-		if handler.Prev_u == 0 {
-			handler.Prev_u = handler.SmallU
+		if exchange.Prev_u == 0 {
+			exchange.Prev_u = exchange.SmallU
 			snap, err := downloadSnapshot(*config)
 			if err != nil {
 				panic("Error while downloading the snapshot")
 			}
-			handler.LastUpdateID = snap.LastUpdateID
-			fmt.Println(handler.LastUpdateID)
+			exchange.LastUpdateID = snap.LastUpdateID
+			fmt.Println(exchange.LastUpdateID)
 
 		}
-		fmt.Println(handler.SmallU, handler.Prev_u+1, handler.BigU)
-		handler.Prev_u = handler.SmallU
+		fmt.Println(exchange.SmallU, exchange.Prev_u+1, exchange.BigU)
+		exchange.Prev_u = exchange.SmallU
 
 	}
 	errHandler := func(err error) {

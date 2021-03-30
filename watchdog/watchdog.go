@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jon4hz/go-binance-local-orderbook/handler"
+	"github.com/jon4hz/go-binance-local-orderbook/exchange"
 )
 
 func Watcher() {
 	var prev_u int64
 	for {
 		time.Sleep(50 * time.Second)
-		if prev_u == handler.BigU {
+		if prev_u == exchange.BigU {
 			fmt.Println("Error: orderbook didn't change for 50 seconds.")
 		}
-		prev_u = handler.BigU
+		prev_u = exchange.BigU
 	}
 }
