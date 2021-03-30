@@ -4,7 +4,7 @@ exchange:
   API_SECRET: asdfasdfasdf
   MARKET: BTCUSDT
 database:
-  POSTGRES_DATABASE: orderbook
-  POSTGRES_USERNAME: user
+  POSTGRES_DB: orderbook
+  POSTGRES_USER: user
   POSTGRES_SERVER: localhost
   POSTGRES_PASSWORD: passwd

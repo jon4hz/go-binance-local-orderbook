@@ -81,7 +81,7 @@ func readConfiguration(fileName string) (config *Config, err error) {
 	viper.BindEnv("exchange.MARKET", "MARKET")
 
 	viper.BindEnv("database.POSTGRES_DB", "POSTGRES_DB")
-	viper.BindEnv("database.POSTGRES_USERNAME", "POSTGRES_USERNAME")
+	viper.BindEnv("database.POSTGRES_USER", "POSTGRES_USER")
 	viper.BindEnv("database.POSTGRES_PASSWORD", "POSTGRES_PASSWORD")
 	viper.BindEnv("database.POSTGRES_SERVER", "POSTGRES_SERVER")
 	viper.BindEnv("database.POSTGRES_PORT", "POSTGRES_PORT")

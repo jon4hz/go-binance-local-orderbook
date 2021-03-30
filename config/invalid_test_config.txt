@@ -3,6 +3,6 @@ NAME: binance
   MARKET: BTCUSDT
 database:
   POSTGRES_DB: orderbook
-  POSTGRES_USERNAME: user
+  POSTGRES_USER: user
   POSTGRES_SERVER: localhost
   POSTGRES_PASSWORD: passwd

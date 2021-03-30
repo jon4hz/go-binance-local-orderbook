@@ -30,7 +30,7 @@ func TestConfigWithEnvVariables(t *testing.T) {
 	os.Setenv("MARKET", "BTCUSDT")
 
 	os.Setenv("POSTGRES_DB", "orderbook")
-	os.Setenv("POSTGRES_USERNAME", "username")
+	os.Setenv("POSTGRES_USER", "username")
 	os.Setenv("POSTGRES_PASSWORD", "password")
 	os.Setenv("POSTGRES_SERVER", "localhost")
 	os.Setenv("POSTGRES_PORT", "5432")
@@ -50,7 +50,7 @@ func TestWithMissingVarExchangeName(t *testing.T) {
 	os.Setenv("MARKET", "BTCUSDT")
 
 	os.Setenv("POSTGRES_DB", "orderbook")
-	os.Setenv("POSTGRES_USERNAME", "username")
+	os.Setenv("POSTGRES_USER", "username")
 	os.Setenv("POSTGRES_PASSWORD", "password")
 	os.Setenv("POSTGRES_SERVER", "localhost")
 	os.Setenv("POSTGRES_PORT", "5432")
@@ -72,7 +72,7 @@ func TestWithMissingVarExchangeMarket(t *testing.T) {
 	os.Setenv("NAME", "binance")
 
 	os.Setenv("POSTGRES_DB", "orderbook")
-	os.Setenv("POSTGRES_USERNAME", "username")
+	os.Setenv("POSTGRES_USER", "username")
 	os.Setenv("POSTGRES_PASSWORD", "password")
 	os.Setenv("POSTGRES_SERVER", "localhost")
 	os.Setenv("POSTGRES_PORT", "5432")
@@ -94,7 +94,7 @@ func TestWithMissingVarExchangeAPIKey(t *testing.T) {
 	os.Setenv("NAME", "binance")
 
 	os.Setenv("POSTGRES_DB", "orderbook")
-	os.Setenv("POSTGRES_USERNAME", "username")
+	os.Setenv("POSTGRES_USER", "username")
 	os.Setenv("POSTGRES_PASSWORD", "password")
 	os.Setenv("POSTGRES_SERVER", "localhost")
 	os.Setenv("POSTGRES_PORT", "5432")
@@ -116,7 +116,7 @@ func TestWithMissingVarExchangeAPISecret(t *testing.T) {
 	os.Setenv("NAME", "binance")
 
 	os.Setenv("POSTGRES_DB", "orderbook")
-	os.Setenv("POSTGRES_USERNAME", "username")
+	os.Setenv("POSTGRES_USER", "username")
 	os.Setenv("POSTGRES_PASSWORD", "password")
 	os.Setenv("POSTGRES_SERVER", "localhost")
 	os.Setenv("POSTGRES_PORT", "5432")
@@ -139,7 +139,7 @@ func TestWithMissingVarDatabaseDB(t *testing.T) {
 	os.Setenv("NAME", "binance")
 	os.Setenv("MARKET", "BTCUSDT")
 
-	os.Setenv("POSTGRES_USERNAME", "username")
+	os.Setenv("POSTGRES_USER", "username")
 	os.Setenv("POSTGRES_PASSWORD", "password")
 	os.Setenv("POSTGRES_SERVER", "localhost")
 	os.Setenv("POSTGRES_PORT", "5432")
@@ -166,9 +166,9 @@ func TestWithMissingVarDatabaseUsername(t *testing.T) {
 	os.Setenv("POSTGRES_SERVER", "localhost")
 	os.Setenv("POSTGRES_PORT", "5432")
 
-	_, varSet := os.LookupEnv("POSTGRES_USERNAME")
+	_, varSet := os.LookupEnv("POSTGRES_USER")
 	if varSet {
-		os.Unsetenv("POSTGRES_USERNAME")
+		os.Unsetenv("POSTGRES_USER")
 	}
 
 	err := Load("")
@@ -184,7 +184,7 @@ func TestWithMissingVarDatabasePassword(t *testing.T) {
 	os.Setenv("MARKET", "BTCUSDT")
 
 	os.Setenv("POSTGRES_DB", "orderbook")
-	os.Setenv("POSTGRES_USERNAME", "username")
+	os.Setenv("POSTGRES_USER", "username")
 	os.Setenv("POSTGRES_SERVER", "localhost")
 	os.Setenv("POSTGRES_PORT", "5432")
 
@@ -206,7 +206,7 @@ func TestWithMissingVarDatabaseServer(t *testing.T) {
 	os.Setenv("MARKET", "BTCUSDT")
 
 	os.Setenv("POSTGRES_DB", "orderbook")
-	os.Setenv("POSTGRES_USERNAME", "username")
+	os.Setenv("POSTGRES_USER", "username")
 	os.Setenv("POSTGRES_PASSWORD", "password")
 	os.Setenv("POSTGRES_SERVER", "localhost")
 	os.Setenv("POSTGRES_PORT", "5432")
@@ -228,7 +228,7 @@ func TestWithMissingVarDatabasePort(t *testing.T) {
 	os.Setenv("NAME", "binance")
 
 	os.Setenv("POSTGRES_DB", "orderbook")
-	os.Setenv("POSTGRES_USERNAME", "username")
+	os.Setenv("POSTGRES_USER", "username")
 	os.Setenv("POSTGRES_PASSWORD", "password")
 	os.Setenv("POSTGRES_SERVER", "localhost")
 	os.Setenv("POSTGRES_PORT", "5432")
@@ -251,7 +251,7 @@ func TestConfigWithEnvVariablesInvalidExchange(t *testing.T) {
 	os.Setenv("MARKET", "BTCUSDT")
 
 	os.Setenv("POSTGRES_DB", "orderbook")
-	os.Setenv("POSTGRES_USERNAME", "username")
+	os.Setenv("POSTGRES_USER", "username")
 	os.Setenv("POSTGRES_PASSWORD", "password")
 	os.Setenv("POSTGRES_SERVER", "localhost")
 	os.Setenv("POSTGRES_PORT", "5432")
@@ -270,7 +270,7 @@ func TestConfigWithEnvVariablesInvalidExchange(t *testing.T) {
 func TestConfigWithoutDatabaseConfig(t *testing.T) {
 	defer func() { recover() }()
 	// unset all possible env vars
-	vars := []string{"NAME", "MARKET", "POSTGRES_DB", "POSTGRES_USERNAME", "POSTGRES_PASSWORD", "POSTGRES_SERVER", "POSTGRES_PORT"}
+	vars := []string{"NAME", "MARKET", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_SERVER", "POSTGRES_PORT"}
 	var varSet bool
 	for i := 0; i < len(vars); i++ {
 		_, varSet = os.LookupEnv(vars[i])
@@ -290,7 +290,7 @@ func TestConfigWithoutDatabaseConfig(t *testing.T) {
 func TestConfigReadFromFile(t *testing.T) {
 
 	// unset all possible env vars
-	vars := []string{"NAME", "MARKET", "POSTGRES_DB", "POSTGRES_USERNAME", "POSTGRES_PASSWORD", "POSTGRES_SERVER", "POSTGRES_PORT"}
+	vars := []string{"NAME", "MARKET", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_SERVER", "POSTGRES_PORT"}
 	var varSet bool
 	for i := 0; i < len(vars); i++ {
 		_, varSet = os.LookupEnv(vars[i])
@@ -308,7 +308,7 @@ func TestConfigReadFromFile(t *testing.T) {
 func TestConfigReadFromInvalidFile(t *testing.T) {
 
 	// unset all possible env vars
-	vars := []string{"NAME", "MARKET", "POSTGRES_DB", "POSTGRES_USERNAME", "POSTGRES_PASSWORD", "POSTGRES_SERVER", "POSTGRES_PORT"}
+	vars := []string{"NAME", "MARKET", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_SERVER", "POSTGRES_PORT"}
 	var varSet bool
 	for i := 0; i < len(vars); i++ {
 		_, varSet = os.LookupEnv(vars[i])
