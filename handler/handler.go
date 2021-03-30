@@ -9,29 +9,29 @@ import (
 )
 
 var (
-	lastUpdateID int64
-	u            int64
-	U            int64
-	prev_u       int64
+	LastUpdateID int64
+	SmallU       int64
+	BigU         int64
+	Prev_u       int64
 )
 
 func HandleWebsocket(config config.Config) {
 	wsDepthHandler := func(event *binance.WsDepthEvent) {
-		U = event.FirstUpdateID
-		u = event.UpdateID
+		BigU = event.FirstUpdateID
+		SmallU = event.UpdateID
 		// first time
-		if prev_u == 0 {
-			prev_u = u
+		if Prev_u == 0 {
+			Prev_u = SmallU
 			snap, err := downloadSnapshot(config)
 			if err != nil {
 				panic("Error while downloading the snapshot")
 			}
-			lastUpdateID = snap.LastUpdateID
-			fmt.Println(lastUpdateID)
+			LastUpdateID = snap.LastUpdateID
+			fmt.Println(LastUpdateID)
 
 		}
-		fmt.Println(u, prev_u+1, U)
-		prev_u = u
+		fmt.Println(SmallU, Prev_u+1, BigU)
+		Prev_u = SmallU
 
 	}
 	errHandler := func(err error) {

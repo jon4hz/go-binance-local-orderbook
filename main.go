@@ -5,10 +5,12 @@ import (
 
 	"github.com/jon4hz/go-binance-local-orderbook/config"
 	"github.com/jon4hz/go-binance-local-orderbook/handler"
+	"github.com/jon4hz/go-binance-local-orderbook/watchdog"
 )
 
 func main() {
 	config := loadConfiguration()
+	go watchdog.Watcher()
 	handler.HandleWebsocket(config)
 }
 

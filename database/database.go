@@ -7,3 +7,7 @@ type Config struct {
 	DBServer   string `mapstructure:"POSTGRES_SERVER"`
 	DBPort     string `mapstructure:"POSTGRES_PORT"`
 }
+
+func InitDatabase() {
+
+}
