@@ -1,7 +1,5 @@
 exchange:
   NAME: binance
-  API_KEY: asdfasdf
-  API_SECRET: asdfasdfasdf
   MARKET: BTCUSDT
 database:
   POSTGRES_DB: orderbook
