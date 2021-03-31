@@ -9,14 +9,14 @@ import (
 	"github.com/jon4hz/go-binance-local-orderbook/exchange"
 )
 
-func HandleWebsocket(config *config.Config) {
+func HandleWebsocket(config config.Config) {
 	wsDepthHandler := func(event *binance.WsDepthEvent) {
 		exchange.BigU = event.FirstUpdateID
 		exchange.SmallU = event.UpdateID
 		// first time
 		if exchange.Prev_u == 0 {
 			exchange.Prev_u = exchange.SmallU
-			snap, err := downloadSnapshot(*config)
+			snap, err := downloadSnapshot(config)
 			if err != nil {
 				panic("Error while downloading the snapshot")
 			}

@@ -1,17 +1,12 @@
-// this package is heavily inspired by github.com/TwinProduction/gatus
-
 package config
 
 import (
 	"errors"
 	"fmt"
-	"io/fs"
-	"log"
-	"os"
 
+	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/jon4hz/go-binance-local-orderbook/database"
 	"github.com/jon4hz/go-binance-local-orderbook/exchange"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -30,90 +25,32 @@ var (
 
 	// ErrInvalidSecurityConfig is an error returned when the security configuration is invalid
 	ErrInvalidSecurityConfig = errors.New("invalid security configuration")
-
-	config *Config
 )
 
 type Config struct {
-	Exchange      *exchange.Config `mapstructure:"exchange"`
-	Database      *database.Config `mapstructure:"database"`
-	DeleteOldSnap bool             `mapstructure:"deleteOldSnap"`
+	Exchange      *exchange.Config `yaml:"exchange"`
+	Database      *database.Config `yaml:"database"`
+	DeleteOldSnap bool             `yaml:"deleteOldSnap" env:"DeleteOldSnap" env-default:"true"`
 }
 
-func Get() *Config {
-	if config == nil {
-		panic(ErrConfigNotLoaded)
-	}
-	return config
-}
-
-func Load(configFile string) error {
-	cfg, err := readConfiguration(configFile)
+func Load(configFile string) (cfg Config, err error) {
+	err = cleanenv.ReadConfig(configFile, &cfg)
 	if err != nil {
-		return err
+		return
 	}
-	config = cfg
-	return nil
-}
-
-func readConfiguration(fileName string) (config *Config, err error) {
-
-	viper.SetConfigType("yaml")
-
-	// check if file exists
-	var readFromFile bool
-
-	var succ fs.FileInfo
-	succ, err = os.Stat(fileName)
-	if succ != nil && !(os.IsNotExist(err)) {
-		viper.SetConfigFile(fileName)
-		log.Printf("[config][Load] Reading configuration from configFile=%s", fileName)
-		readFromFile = true
-	} else {
-		readFromFile = false
-		log.Print("[config][Load] Reading configuration from environment vars")
-	}
-
-	// set defaults
-	viper.SetDefault("database.POSTGRES_PORT", "5432")
-	viper.SetDefault("deleteOldSnap", true)
-
-	// map environment variables to yaml values
-	viper.BindEnv("exchange.NAME", "NAME")
-	viper.BindEnv("exchange.MARKET", "MARKET")
-
-	viper.BindEnv("database.POSTGRES_DB", "POSTGRES_DB")
-	viper.BindEnv("database.POSTGRES_USER", "POSTGRES_USER")
-	viper.BindEnv("database.POSTGRES_PASSWORD", "POSTGRES_PASSWORD")
-	viper.BindEnv("database.POSTGRES_SERVER", "POSTGRES_SERVER")
-	viper.BindEnv("database.POSTGRES_PORT", "POSTGRES_PORT")
-
-	viper.BindEnv("deleteOldSnap", "DeleteOldSnap")
-
-	viper.AutomaticEnv()
-
-	if readFromFile {
-		err = viper.ReadInConfig()
-		if err != nil {
-			return
-		}
-	}
-
-	err = viper.Unmarshal(&config)
-
 	if err == nil {
-		validateExchangeConfig(config)
-		validateDatabaseConfig(config)
-		validateOtherConfig(config)
+		validateExchangeConfig(&cfg)
+		validateDatabaseConfig(&cfg)
+		validateOtherConfig(&cfg)
 	}
-
 	return
+
 }
 
 func validateExchangeConfig(config *Config) {
-	if config.Exchange == nil {
+	/* if config.Exchange == nil {
 		panic("[config][validateExchangeConfig] Exchange is not configured")
-	}
+	} */
 	if config.Exchange.Name == "" {
 		panic("[config][validateExchangeConfig] Exchange Name is not configured")
 	} else {

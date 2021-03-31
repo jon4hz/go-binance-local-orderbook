@@ -1,32 +1,28 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"testing"
 )
 
-func TestGetBeforeConfigIsLoaded(t *testing.T) {
-	defer func() { recover() }()
-	Get()
-	t.Fatal("Should've panicked because the configuration hasn't been loaded yet")
-}
-
 func TestLoadFileThatDoesNotExistAndWithoutEnvVars(t *testing.T) {
 	defer func() { recover() }()
-	_ = Load("file-that-does-not-exist.yaml")
-	t.Error("Should've panicked, because the file specified doesn't exist and env is not set")
+	_, err := Load("file-that-does-not-exist.yaml")
+	if !os.IsNotExist(err) {
+		t.Error("Should've returned error, because the file specified doesn't exist and env is not set")
+	}
 }
 
 func TestLoadDefaultConfigurationFile(t *testing.T) {
 	defer func() { recover() }()
-	_ = Load(DefaultConfigurationFilePath)
-	t.Error("Should've panicked, because there's no configuration files at the default path nor the default fallback path nor is the env set")
-
+	_, err := Load(DefaultConfigurationFilePath)
+	if !os.IsNotExist(err) {
+		t.Error("Should've returned error, because the file specified doesn't exist and env is not set")
+	}
 }
 
-func TestConfigWithEnvVariables(t *testing.T) {
-	os.Setenv("NAME", "binance")
+func TestConfigOverwriteWithEnvVariables(t *testing.T) {
+	os.Setenv("EXCHANGE", "binance-futures")
 	os.Setenv("MARKET", "BTCUSDT")
 
 	os.Setenv("POSTGRES_DB", "orderbook")
@@ -37,16 +33,16 @@ func TestConfigWithEnvVariables(t *testing.T) {
 
 	os.Setenv("DeleteOldSnap", "true")
 
-	err := Load("")
+	cfg, err := Load("valid_test_config.yml")
 	if err != nil {
-		t.Error(fmt.Sprintf("Couldn't read variables from environment: %s", err))
+		t.Errorf("Couldn't read variables from environment: %s", err)
 	}
-	cfg := Get()
-	if cfg == nil {
-		t.Error("Config can't be nil")
+	if cfg.Exchange.Name != "binance-futures" {
+		t.Errorf("Expected exchange to be binance-futures, not %s", cfg.Exchange.Name)
 	}
 }
 
+/*
 func TestWithMissingVarExchangeName(t *testing.T) {
 	defer func() { recover() }()
 	os.Setenv("MARKET", "BTCUSDT")
@@ -324,3 +320,4 @@ func TestConfigReadFromInvalidFile(t *testing.T) {
 		t.Error("Error can't be nil since config file is invalid")
 	}
 }
+*/
