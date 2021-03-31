@@ -8,6 +8,6 @@ var (
 )
 
 type Config struct {
-	Name   string `yaml:"name" env:"EXCHANGE" env-default:"binance"`
-	Market string `yaml:"market" env:"MARKET"`
+	Name   string `mapstructure:"NAME"`
+	Market string `mapstructure:"MARKET"`
 }

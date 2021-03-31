@@ -1,9 +1,11 @@
 exchange:
-  name: binance
-  market: BTCUSDT
+  NAME: binance
+  API_KEY: asdfasdf
+  API_SECRET: asdfasdfasdf
+  MARKET: BTCUSDT
 database:
-  db: orderbook
-  user: user
-  server: localhost
-  password: passwd
+  POSTGRES_DB: orderbook
+  POSTGRES_USER: user
+  POSTGRES_SERVER: localhost
+  POSTGRES_PASSWORD: passwd
 deleteOldSnap: true

@@ -10,11 +10,11 @@ import (
 )
 
 type Config struct {
-	DBName     string `yaml:"db" env:"POSTGRES_DB"`
-	DBUser     string `yaml:"user" env:"POSTGRES_USER"`
-	DBPassword string `yaml:"password" env:"POSTGRES_PASSWORD"`
-	DBServer   string `yaml:"server" env:"POSTGRES_SERVER"`
-	DBPort     string `yaml:"port" env:"POSTGRES_PORT" env-default:"5432"`
+	DBName     string `mapstructure:"POSTGRES_DB"`
+	DBUser     string `mapstructure:"POSTGRES_USER"`
+	DBPassword string `mapstructure:"POSTGRES_PASSWORD"`
+	DBServer   string `mapstructure:"POSTGRES_SERVER"`
+	DBPort     string `mapstructure:"POSTGRES_PORT"`
 }
 
 type testRows struct {

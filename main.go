@@ -33,7 +33,7 @@ func main() {
 	binance.HandleWebsocket(config)
 }
 
-func createDatabasePool(config config.Config) (dbpool *pgxpool.Pool, err error) {
+func createDatabasePool(config *config.Config) (dbpool *pgxpool.Pool, err error) {
 	// create database connection
 	pgxConfig, err := pgxpool.ParseConfig(fmt.Sprintf("postgres://%s:%s@%s:%s/%s", config.Database.DBUser, config.Database.DBPassword, config.Database.DBServer, config.Database.DBPort, config.Database.DBName))
 	if err != nil {
@@ -48,18 +48,16 @@ func createDatabasePool(config config.Config) (dbpool *pgxpool.Pool, err error) 
 	return
 }
 
-func loadConfiguration() config.Config {
+func loadConfiguration() *config.Config {
 	var err error
-	var cfg config.Config
 	customConfigFile := os.Getenv("CONFIG_FILE")
 	if len(customConfigFile) > 0 {
-		cfg, err = config.Load(customConfigFile)
+		err = config.Load(customConfigFile)
 	} else {
-		cfg, err = config.Load(config.DefaultConfigurationFilePath)
+		err = config.Load(config.DefaultConfigurationFilePath)
 	}
 	if err != nil {
 		panic(err)
-
 	}
-	return cfg
+	return config.Get()
 }
