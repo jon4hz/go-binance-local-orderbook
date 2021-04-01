@@ -8,6 +8,9 @@ on:
       - "master"
     
 jobs:
+  misspell:
+    runs-on
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -16,15 +19,23 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.15
+        go-version: 1.16
 
     - name: Build package
       run: |
         go build -v ./...
         
   test:
+    needs: [build]
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.16
+
     - name: Test package
       run: |
         go test -v ./...
