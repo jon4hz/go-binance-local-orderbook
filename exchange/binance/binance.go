@@ -14,7 +14,7 @@ import (
 func HandleWebsocket(config *config.Config) {
 	var response database.DatabaseInsert
 	wsDepthHandler := func(event *binance.WsDepthEvent) {
-		_ = &database.BinanceDepthResponse{Response: event}
+		response = &database.BinanceDepthResponse{Response: event}
 		exchange.BigU = event.FirstUpdateID
 		exchange.SmallU = event.UpdateID
 		// first time
@@ -29,9 +29,11 @@ func HandleWebsocket(config *config.Config) {
 			exchange.LastUpdateID = snap.LastUpdateID
 			fmt.Println(exchange.LastUpdateID)
 
+		} else {
+			response.InsertIntoDatabase()
+			fmt.Println(exchange.SmallU, exchange.Prev_u+1, exchange.BigU)
+			exchange.Prev_u = exchange.SmallU
 		}
-		fmt.Println(exchange.SmallU, exchange.Prev_u+1, exchange.BigU)
-		exchange.Prev_u = exchange.SmallU
 
 	}
 	errHandler := func(err error) {
