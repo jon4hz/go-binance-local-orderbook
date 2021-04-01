@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 
@@ -24,8 +25,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = database.InitDatabase(dbpool)
-
+	err = database.InitDatabase(dbpool, context.Background(), config.Database)
+	if err != nil {
+		log.Fatal(err)
+	}
 	// start orderbook watchdog
 	go watchdog.Watcher()
 
@@ -59,5 +62,8 @@ func loadConfiguration() *config.Config {
 	if err != nil {
 		panic(err)
 	}
-	return config.Get()
+	cfg := config.Get()
+	cfg.Database.DBTableMarketName = strings.ToLower(cfg.Exchange.Market)
+	cfg.Database.DBDeleteOldSnap = cfg.DeleteOldSnap
+	return cfg
 }
