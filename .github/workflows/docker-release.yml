@@ -1,4 +1,4 @@
-name: build and tag docker image
+name: docker
 
 on: release
 

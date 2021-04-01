@@ -1,4 +1,4 @@
-name: add go binaries to release 
+name: release
 
 on: 
   release:
