@@ -1,8 +1,9 @@
-name: Go Testing
+name: go testing
 
 on:
   push:
-    - "**"
+    branches:
+      - "**"
   pull_request:
     branches:
       - "master"
