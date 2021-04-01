@@ -21,7 +21,10 @@ jobs:
     - name: Build package
       run: |
         go build -v ./...
-
+        
+  test:
+    runs-on: ubuntu-latest
+    steps:
     - name: Test package
       run: |
         go test -v ./...

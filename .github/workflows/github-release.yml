@@ -1,0 +1,53 @@
+name: create github release
+
+on:
+  push:
+    branches:
+      - 'master'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: "contains(github.event.head_commit.message, '[release] ')"
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.15
+
+    - name: Build package
+      run: |
+        go build -v ./...
+  
+  test:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: "contains(github.event.head_commit.message, '[release] ')"
+    steps:
+      - name: Test package
+        run: |
+          go test -v ./...
+
+
+  release:
+    needs: [buildAllBinaries]
+    runs-on: ubuntu-latest
+    if: "contains(github.event.head_commit.message, '[release] ')"
+    steps:
+      - uses: actions/checkout@master
+      - name: Tag and prepare release
+        id: tag_and_prepare_release
+        uses: K-Phoen/semver-release-action@master
+        with:
+          release_branch: master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload release notes
+        if: steps.tag_and_prepare_release.outputs.tag
+        uses: Roang-zero1/github-create-release-action@master
+        with:
+          created_tag: ${{ steps.tag_and_prepare_release.outputs.tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
