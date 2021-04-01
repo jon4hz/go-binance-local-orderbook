@@ -16,12 +16,12 @@ jobs:
           - goarch: "386"
             goos: darwin
 
-  steps:
-    - uses: actions/checkout@v2
-    - uses: wangyoucao577/go-release-action@v1.16
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        goos: ${{ matrix.goos }}
-        goarch: ${{ matrix.goarch }}
-        extra_files: LICENSE README.md
-        sha256sum: true
+    steps:
+      - uses: actions/checkout@v2
+      - uses: wangyoucao577/go-release-action@v1.16
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          extra_files: LICENSE README.md
+          sha256sum: true
