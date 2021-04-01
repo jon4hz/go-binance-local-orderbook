@@ -1,13 +1,9 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"log"
 	"os"
 	"strings"
-
-	"github.com/jackc/pgx/v4/pgxpool"
 
 	"github.com/jon4hz/go-binance-local-orderbook/config"
 	"github.com/jon4hz/go-binance-local-orderbook/database"
@@ -20,12 +16,12 @@ func main() {
 	config := loadConfiguration()
 
 	// get database pool
-	dbpool, err := createDatabasePool(config)
+	err := database.CreateDatabasePool(config)
 	if err != nil {
 		os.Exit(1)
 	}
 
-	err = database.InitDatabase(dbpool, context.Background(), config.Database)
+	err = database.InitDatabase(config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -34,21 +30,6 @@ func main() {
 
 	// start the websocket to binance (blocking with channel)
 	binance.HandleWebsocket(config)
-}
-
-func createDatabasePool(config *config.Config) (dbpool *pgxpool.Pool, err error) {
-	// create database connection
-	pgxConfig, err := pgxpool.ParseConfig(fmt.Sprintf("postgres://%s:%s@%s:%s/%s", config.Database.DBUser, config.Database.DBPassword, config.Database.DBServer, config.Database.DBPort, config.Database.DBName))
-	if err != nil {
-		log.Fatal("Error configuring the database: ", err)
-	}
-	// create connection pool
-	dbpool, err = pgxpool.ConnectConfig(context.Background(), pgxConfig)
-	if err != nil {
-		log.Fatal("Unable to connect to database: ", err)
-		return
-	}
-	return
 }
 
 func loadConfiguration() *config.Config {
