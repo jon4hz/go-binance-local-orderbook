@@ -16,6 +16,16 @@ var (
 	ctx    context.Context
 )
 
+type BinanceDepthResponse struct {
+	Snapshot *binance.DepthResponse
+	Response *binance.WsDepthEvent
+}
+
+type BinanceFuturesResponse struct {
+	Snapshot *futures.DepthResponse
+	Response *futures.WsDepthEvent
+}
+
 func CreateDatabasePool(config *config.Config) (err error) {
 	// create database connection
 	pgxConfig, err := pgxpool.ParseConfig(fmt.Sprintf("postgres://%s:%s@%s:%s/%s", config.Database.DBUser, config.Database.DBPassword, config.Database.DBServer, config.Database.DBPort, config.Database.DBName))
@@ -81,19 +91,18 @@ type DatabaseInsert interface {
 	InsertIntoDatabase()
 }
 
-type BinanceDepthResponse struct {
-	Snapshot *binance.DepthResponse
-	Response *binance.WsDepthEvent
-}
-
-type BinanceFuturesResponse struct {
-	Snapshot *futures.DepthResponse
-	Response *futures.WsDepthEvent
-}
-
-func (data *BinanceDepthResponse) InsertIntoDatabase() {
-	for _, i := range data.Response.Asks {
-		fmt.Println(i.Price)
+func (resp *BinanceDepthResponse) InsertIntoDatabase() {
+	if resp.Snapshot != nil {
+		asks := &resp.Snapshot.Asks
+		for _, i := range *asks {
+			fmt.Println(i.Price)
+		}
+	}
+	if resp.Response != nil {
+		asks := &resp.Response.Asks
+		for _, i := range *asks {
+			fmt.Println(i.Price)
+		}
 	}
 }
 
