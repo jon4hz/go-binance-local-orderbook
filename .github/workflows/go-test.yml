@@ -20,6 +20,9 @@ jobs:
     - name: Install misspell
       run: |
         go get -u github.com/client9/misspell/cmd/misspell
+        
+    - name: execute misspell
+      run: |
         misspell config/ database/ Dockerfile docker-compose.yml exchange/ LICENSE main.go README.md watchdog/
 
   build:
