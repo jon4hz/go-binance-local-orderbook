@@ -45,7 +45,7 @@ jobs:
           title: "Automatic Release"
 
   add-builds:
-    needs: [build]
+    needs: [release]
     name: Build package
     runs-on: ubuntu-latest
     strategy:
