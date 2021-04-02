@@ -28,7 +28,7 @@ jobs:
         push: true
         tags: jon4hz/go-binance-local-orderbook
         context: .
-        file: ./channel_bot.Dockerfile
+        file: ./Dockerfile
         cache-from: type=registry,ref=jon4hz/go-binance-local-orderbook:cache
         cache-to: type=registry,ref=jon4hz/go-binance-local-orderbook:cache
 
