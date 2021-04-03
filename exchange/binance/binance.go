@@ -50,6 +50,7 @@ func HandleWebsocket(config *config.Config) {
 func downloadSnapshot(config config.Config) (res *binance.DepthResponse, err error) {
 	client := binance.NewClient("", "")
 	res, err = client.NewDepthService().Symbol(config.Exchange.Market).
+		Limit(1000).
 		Do(context.Background())
 	return
 
