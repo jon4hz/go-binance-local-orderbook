@@ -21,7 +21,7 @@ type BinanceDepthResponse struct {
 	Response *binance.WsDepthEvent
 }
 
-type BinanceFuturesResponse struct {
+type BinanceFuturesDepthResponse struct {
 	Snapshot *futures.DepthResponse
 	Response *futures.WsDepthEvent
 }
@@ -62,15 +62,7 @@ func InitDatabase(config *config.Config) error {
 
 	// create tables
 	if _, err := conn.Exec(ctx,
-		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s_general(
-			id integer NOT NULL DEFAULT '1',
-			lastUpdateId bigint NOT NULL,
-			u_small bigint DEFAULT '0',
-			u_big bigint DEFAULT '0',
-			PRIMARY KEY(id)
-		);
-		
-		CREATE TABLE IF NOT EXISTS %s_asks(
+		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s_asks(
 			id float,
 			value float,
 			PRIMARY KEY(id)
@@ -80,7 +72,7 @@ func InitDatabase(config *config.Config) error {
 			id float,
 			value float,
 			PRIMARY KEY(id)
-		);`, config.Database.DBTableMarketName, config.Database.DBTableMarketName, config.Database.DBTableMarketName)); err != nil {
+		);`, config.Database.DBTableMarketName, config.Database.DBTableMarketName)); err != nil {
 		return err
 	}
 	log.Println("Successfully created new tables")
@@ -106,6 +98,17 @@ func (resp *BinanceDepthResponse) InsertIntoDatabase() {
 	}
 }
 
-func (data *BinanceFuturesResponse) InsertIntoDatabase() {
-
+func (resp *BinanceFuturesDepthResponse) InsertIntoDatabase() {
+	if resp.Snapshot != nil {
+		asks := &resp.Snapshot.Asks
+		for _, i := range *asks {
+			fmt.Println(i.Price)
+		}
+	}
+	if resp.Response != nil {
+		asks := &resp.Response.Asks
+		for _, i := range *asks {
+			fmt.Println(i.Price)
+		}
+	}
 }
