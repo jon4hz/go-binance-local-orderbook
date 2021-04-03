@@ -11,9 +11,9 @@ func Watcher() {
 	var prev_u int64
 	for {
 		time.Sleep(50 * time.Second)
-		if prev_u == exchange.BigU {
+		if prev_u == exchange.SmallU {
 			fmt.Println("Error: orderbook didn't change for 50 seconds.")
 		}
-		prev_u = exchange.BigU
+		prev_u = exchange.SmallU
 	}
 }
