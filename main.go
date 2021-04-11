@@ -29,7 +29,7 @@ func main() {
 	go watchdog.Watcher()
 
 	// start the websocket to binance (blocking with channel)
-	binance.HandleWebsocket(config)
+	binance.InitWebsocket(config)
 }
 
 func loadConfiguration() *config.Config {
