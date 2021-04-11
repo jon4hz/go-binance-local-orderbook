@@ -84,7 +84,7 @@ type DatabaseInsert interface {
 }
 
 func (resp *BinanceDepthResponse) InsertIntoDatabase() {
-	if resp.Snapshot != nil {
+	/* if resp.Snapshot != nil {
 		asks := &resp.Snapshot.Asks
 		for _, i := range *asks {
 			fmt.Println(i.Price)
@@ -95,11 +95,11 @@ func (resp *BinanceDepthResponse) InsertIntoDatabase() {
 		for _, i := range *asks {
 			fmt.Println(i.Price)
 		}
-	}
+	} */
 }
 
 func (resp *BinanceFuturesDepthResponse) InsertIntoDatabase() {
-	if resp.Snapshot != nil {
+	/* if resp.Snapshot != nil {
 		asks := &resp.Snapshot.Asks
 		for _, i := range *asks {
 			fmt.Println(i.Price)
@@ -110,5 +110,5 @@ func (resp *BinanceFuturesDepthResponse) InsertIntoDatabase() {
 		for _, i := range *asks {
 			fmt.Println(i.Price)
 		}
-	}
+	} */
 }
