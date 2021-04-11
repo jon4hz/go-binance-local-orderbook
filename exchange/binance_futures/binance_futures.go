@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/adshao/go-binance/v2"
 	"github.com/adshao/go-binance/v2/futures"
@@ -40,12 +41,36 @@ func HandleWebsocket(config *config.Config) {
 	errHandler := func(err error) {
 		log.Fatal(err)
 	}
-	doneC, _, err := futures.WsDiffDepthServe(config.Exchange.Market, wsDepthHandler, errHandler)
-	if err != nil {
-		log.Fatal(err)
-		return
+	var monitorWS func(sym string, ch chan struct{})
+	monitorWS = func(sym string, ch chan struct{}) {
+		go func() {
+			<-ch
+			// ws disconnected, try to re-establish.
+			log.Printf("Websocket for %s crashed, spawning a new one.", sym)
+			doneC, _, err := futures.WsDiffDepthServe(sym, wsDepthHandler, errHandler)
+			if err != nil {
+				log.Printf("error registering symbol %s: %v", sym, err)
+				return
+			}
+			monitorWS(sym, doneC)
+
+			<-doneC
+		}()
 	}
-	<-doneC
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	go func(sym string) {
+		defer wg.Done()
+		doneC, _, err := futures.WsDiffDepthServe(sym, wsDepthHandler, errHandler)
+		if err != nil {
+			log.Printf("error registering symbol %s: %v", sym, err)
+		}
+		monitorWS(sym, doneC)
+
+		<-doneC
+	}(config.Exchange.Market)
+	wg.Wait()
 }
 
 func downloadSnapshot(config config.Config) (res *futures.DepthResponse, err error) {
