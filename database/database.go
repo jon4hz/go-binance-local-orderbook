@@ -13,7 +13,6 @@ import (
 
 var (
 	dbpool *pgxpool.Pool
-	ctx    context.Context
 )
 
 type BinanceDepthResponse struct {
@@ -33,7 +32,7 @@ func CreateDatabasePool(config *config.Config) (err error) {
 		log.Fatal("Error configuring the database: ", err)
 	}
 	// create connection pool
-	ctx = context.Background()
+	ctx := context.Background()
 	dbpool, err = pgxpool.ConnectConfig(ctx, pgxConfig)
 	if err != nil {
 		log.Fatal("Unable to connect to database: ", err)
@@ -44,6 +43,7 @@ func CreateDatabasePool(config *config.Config) (err error) {
 
 func InitDatabase(config *config.Config) error {
 	// drop old tables if set to true (default)
+	ctx := context.TODO()
 	conn, err := dbpool.Acquire(ctx)
 	if err != nil {
 		return err
