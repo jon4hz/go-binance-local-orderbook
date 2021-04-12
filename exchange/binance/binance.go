@@ -8,29 +8,43 @@ import (
 
 	"github.com/adshao/go-binance/v2"
 	"github.com/jon4hz/go-binance-local-orderbook/config"
+	"github.com/jon4hz/go-binance-local-orderbook/database"
 	"github.com/jon4hz/go-binance-local-orderbook/exchange"
 )
 
 func InitWebsocket(config *config.Config) {
 	//var response database.DatabaseInsert
 	wsDepthHandler := func(event *binance.WsDepthEvent) {
-		//response = &database.BinanceDepthResponse{Response: event}
+		response := &database.BinanceDepthResponse{Response: event}
 		exchange.BigU = event.FirstUpdateID
 		exchange.SmallU = event.UpdateID
 		// first time
 		if exchange.Prev_u == 0 {
 			exchange.Prev_u = exchange.SmallU
-			snap, err := downloadSnapshot(*config)
-			//response = &database.BinanceDepthResponse{Snapshot: snap}
-			if err != nil {
-				panic("Error while downloading the snapshot")
+
+			// download snapshot
+			if exchange.LastUpdateID == 0 {
+				snap, err := downloadSnapshot(*config)
+				if err != nil {
+					panic("Error while downloading the snapshot")
+				}
+				response = &database.BinanceDepthResponse{Snapshot: snap}
+				err = response.InsertIntoDatabase(config.Database.DBTableMarketName)
+				if err != nil {
+					log.Println(err)
+					// send notification
+				}
+				fmt.Println("Inserted snapshot into db")
+				exchange.LastUpdateID = snap.LastUpdateID
 			}
-			//response.InsertIntoDatabase()
-			exchange.LastUpdateID = snap.LastUpdateID
 			fmt.Println(exchange.LastUpdateID)
 
 		} else {
-			//response.InsertIntoDatabase()
+			err := response.InsertIntoDatabase(config.Database.DBTableMarketName)
+			if err != nil {
+				log.Println(err)
+				// send notification
+			}
 			fmt.Println(exchange.SmallU, exchange.Prev_u+1, exchange.BigU)
 			exchange.Prev_u = exchange.SmallU
 		}

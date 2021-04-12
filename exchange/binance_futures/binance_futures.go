@@ -14,9 +14,8 @@ import (
 )
 
 func HandleWebsocket(config *config.Config) {
-	var response database.DatabaseInsert
 	wsDepthHandler := func(event *futures.WsDepthEvent) {
-		response = &database.BinanceFuturesDepthResponse{Response: event}
+		response := &database.BinanceFuturesDepthResponse{Response: event}
 		exchange.BigU = event.FirstUpdateID
 		exchange.SmallU = event.LastUpdateID
 		// first time
@@ -27,12 +26,20 @@ func HandleWebsocket(config *config.Config) {
 			if err != nil {
 				panic("Error while downloading the snapshot")
 			}
-			response.InsertIntoDatabase()
+			err = response.InsertIntoDatabase(config.Database.DBTableMarketName)
+			if err != nil {
+				log.Println(err)
+				// send notification
+			}
 			exchange.LastUpdateID = snap.LastUpdateID
 			fmt.Println(exchange.LastUpdateID)
 
 		} else {
-			response.InsertIntoDatabase()
+			err := response.InsertIntoDatabase(config.Database.DBTableMarketName)
+			if err != nil {
+				log.Println(err)
+				// send notification
+			}
 			fmt.Println(exchange.SmallU, exchange.Prev_u+1, exchange.BigU)
 			exchange.Prev_u = exchange.SmallU
 		}

@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -63,14 +64,14 @@ func InitDatabase(config *config.Config) error {
 	// create tables
 	if _, err := conn.Exec(ctx,
 		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s_asks(
-			id float,
-			value float,
+			id varchar(50),
+			quantity varchar(50),
 			PRIMARY KEY(id)
 		);
 		
 		CREATE TABLE IF NOT EXISTS %s_bids(
-			id float,
-			value float,
+			id varchar(50),
+			quantity varchar(50),
 			PRIMARY KEY(id)
 		);`, config.Database.DBTableMarketName, config.Database.DBTableMarketName)); err != nil {
 		return err
@@ -79,36 +80,94 @@ func InitDatabase(config *config.Config) error {
 	return nil
 }
 
-type DatabaseInsert interface {
-	InsertIntoDatabase()
+type bid struct {
+	Price    string
+	Quantity string
 }
 
-func (resp *BinanceDepthResponse) InsertIntoDatabase() {
-	/* if resp.Snapshot != nil {
-		asks := &resp.Snapshot.Asks
-		for _, i := range *asks {
-			fmt.Println(i.Price)
+type ask struct {
+	Price    string
+	Quantity string
+}
+
+func createUnifiedStruct(asks interface{}, bids interface{}) ([]*ask, []*bid, error) {
+	jAsks, err := json.Marshal(asks)
+	if err != nil {
+		return nil, nil, err
+	}
+	oAsks := []*ask{}
+	err = json.Unmarshal(jAsks, &oAsks)
+	if err != nil {
+		return nil, nil, err
+	}
+	jBids, err := json.Marshal(bids)
+	if err != nil {
+		return nil, nil, err
+	}
+	oBids := []*bid{}
+	err = json.Unmarshal(jBids, &oBids)
+	if err != nil {
+		return nil, nil, err
+	}
+	return oAsks, oBids, nil
+}
+
+func doDBInsert(sym string, asks interface{}, bids interface{}) error {
+	conn, err := dbpool.Acquire(context.TODO())
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	// create unified structs
+	oAsks, oBids, err := createUnifiedStruct(asks, bids)
+	if err != nil {
+		return err
+	}
+	for _, v := range oAsks {
+		if _, err := conn.Exec(context.TODO(),
+			fmt.Sprintf("INSERT INTO %s_asks(id, quantity) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET quantity = $3", sym), v.Price, v.Quantity, v.Quantity); err != nil {
+			log.Printf("Error: %s", err)
+			return err
+		}
+	}
+	for _, v := range oBids {
+		if _, err := conn.Exec(context.TODO(),
+			fmt.Sprintf("INSERT INTO %s_bids(id, quantity) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET quantity = $3", sym), v.Price, v.Quantity, v.Quantity); err != nil {
+			log.Printf("Error: %s", err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (resp *BinanceDepthResponse) InsertIntoDatabase(sym string) error {
+	if resp.Snapshot != nil {
+		err := doDBInsert(sym, resp.Snapshot.Asks, resp.Snapshot.Asks)
+		if err != nil {
+			return err
 		}
 	}
 	if resp.Response != nil {
-		asks := &resp.Response.Asks
-		for _, i := range *asks {
-			fmt.Println(i.Price)
+		err := doDBInsert(sym, resp.Response.Asks, resp.Response.Asks)
+		if err != nil {
+			return err
 		}
-	} */
+	}
+	return nil
 }
 
-func (resp *BinanceFuturesDepthResponse) InsertIntoDatabase() {
-	/* if resp.Snapshot != nil {
-		asks := &resp.Snapshot.Asks
-		for _, i := range *asks {
-			fmt.Println(i.Price)
+func (resp *BinanceFuturesDepthResponse) InsertIntoDatabase(sym string) error {
+	if resp.Snapshot != nil {
+		err := doDBInsert(sym, resp.Snapshot.Asks, resp.Snapshot.Asks)
+		if err != nil {
+			return err
 		}
 	}
 	if resp.Response != nil {
-		asks := &resp.Response.Asks
-		for _, i := range *asks {
-			fmt.Println(i.Price)
+		err := doDBInsert(sym, resp.Response.Asks, resp.Response.Asks)
+		if err != nil {
+			return err
 		}
-	} */
+	}
+	return nil
 }
