@@ -84,7 +84,7 @@ func downloadSnapshot(config config.Config) (res *futures.DepthResponse, err err
 	client := binance.NewFuturesClient("", "")
 	res, err = client.NewDepthService().Symbol(config.Exchange.Market).
 		Limit(1000).
-		Do(context.Background())
+		Do(context.TODO())
 	return
 
 }

@@ -2,7 +2,6 @@ package binance
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"sync"
 
@@ -20,33 +19,48 @@ func InitWebsocket(config *config.Config) {
 		exchange.SmallU = event.UpdateID
 		// first time
 		if exchange.Prev_u == 0 {
-			exchange.Prev_u = exchange.SmallU
-
 			// download snapshot
 			if exchange.LastUpdateID == 0 {
 				snap, err := downloadSnapshot(*config)
 				if err != nil {
-					panic("Error while downloading the snapshot")
+					log.Println("Error while downloading the snapshot")
+					return
 				}
 				response = &database.BinanceDepthResponse{Snapshot: snap}
 				err = response.InsertIntoDatabase(config.Database.DBTableMarketName)
 				if err != nil {
 					log.Println(err)
 					// send notification
+					return
 				}
-				fmt.Println("Inserted snapshot into db")
+				log.Println("Inserted snapshot into db")
 				exchange.LastUpdateID = snap.LastUpdateID
 			}
-			fmt.Println(exchange.LastUpdateID)
+			if exchange.SmallU >= exchange.LastUpdateID+1 && exchange.BigU <= exchange.LastUpdateID+1 {
+				err := response.InsertIntoDatabase(config.Database.DBTableMarketName)
+				if err != nil {
+					log.Println(err)
+					// send notification
+					return
+				}
+				exchange.Prev_u = exchange.SmallU
+				log.Println("Inserted first event successfully")
+			}
+			return
 
-		} else {
+		} else if exchange.BigU >= exchange.Prev_u+1 {
+			if exchange.BigU > exchange.Prev_u+1 {
+				log.Printf("Warning, U = %d and prev_u = %d", exchange.BigU, exchange.Prev_u)
+				// send notification
+			}
 			err := response.InsertIntoDatabase(config.Database.DBTableMarketName)
 			if err != nil {
 				log.Println(err)
 				// send notification
 			}
-			fmt.Println(exchange.SmallU, exchange.Prev_u+1, exchange.BigU)
 			exchange.Prev_u = exchange.SmallU
+		} else {
+			log.Println("Error")
 		}
 
 	}
@@ -90,7 +104,7 @@ func downloadSnapshot(config config.Config) (res *binance.DepthResponse, err err
 	client := binance.NewClient("", "")
 	res, err = client.NewDepthService().Symbol(config.Exchange.Market).
 		Limit(1000).
-		Do(context.Background())
+		Do(context.TODO())
 	return
 
 }
