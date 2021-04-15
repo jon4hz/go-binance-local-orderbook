@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/adshao/go-binance/v2"
 	"github.com/adshao/go-binance/v2/futures"
@@ -124,17 +125,43 @@ func doDBInsert(sym string, asks interface{}, bids interface{}) error {
 		return err
 	}
 	for _, v := range oAsks {
-		if _, err := conn.Exec(context.TODO(),
-			fmt.Sprintf("INSERT INTO %s_asks(id, quantity) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET quantity = $3", sym), v.Price, v.Quantity, v.Quantity); err != nil {
-			log.Printf("Error: %s", err)
+		var quant float64
+		if quant, err = strconv.ParseFloat(v.Quantity, 64); err != nil {
+			fmt.Printf("[database][dbinsert] couldn't convert \"quantity\" to float: %s\n", err)
 			return err
+		}
+		if quant == 0 {
+			if _, err := conn.Exec(context.TODO(),
+				fmt.Sprintf("DELETE FROM %s_asks WHERE id = $1", sym), v.Price); err != nil {
+				log.Printf("Error: %s", err)
+				return err
+			}
+		} else {
+			if _, err := conn.Exec(context.TODO(),
+				fmt.Sprintf("INSERT INTO %s_asks(id, quantity) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET quantity = $3", sym), v.Price, v.Quantity, v.Quantity); err != nil {
+				log.Printf("Error: %s", err)
+				return err
+			}
 		}
 	}
 	for _, v := range oBids {
-		if _, err := conn.Exec(context.TODO(),
-			fmt.Sprintf("INSERT INTO %s_bids(id, quantity) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET quantity = $3", sym), v.Price, v.Quantity, v.Quantity); err != nil {
-			log.Printf("Error: %s", err)
+		var quant float64
+		if quant, err = strconv.ParseFloat(v.Quantity, 64); err != nil {
+			fmt.Printf("[database][dbinsert] couldn't convert \"quantity\" to float: %s\n", err)
 			return err
+		}
+		if quant == 0 {
+			if _, err := conn.Exec(context.TODO(),
+				fmt.Sprintf("DELETE FROM %s_bids WHERE id = $1", sym), v.Price); err != nil {
+				log.Printf("Error: %s", err)
+				return err
+			}
+		} else {
+			if _, err := conn.Exec(context.TODO(),
+				fmt.Sprintf("INSERT INTO %s_bids(id, quantity) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET quantity = $3", sym), v.Price, v.Quantity, v.Quantity); err != nil {
+				log.Printf("Error: %s", err)
+				return err
+			}
 		}
 	}
 	return nil
@@ -157,6 +184,38 @@ func (resp *BinanceDepthResponse) InsertIntoDatabase(sym string) error {
 }
 
 func (resp *BinanceFuturesDepthResponse) InsertIntoDatabase(sym string) error {
+	if resp.Snapshot != nil {
+		err := doDBInsert(sym, resp.Snapshot.Asks, resp.Snapshot.Asks)
+		if err != nil {
+			return err
+		}
+	}
+	if resp.Response != nil {
+		err := doDBInsert(sym, resp.Response.Asks, resp.Response.Asks)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (resp *BinanceDepthResponse) DeleteFromDatabase(sym string) error {
+	if resp.Snapshot != nil {
+		err := doDBInsert(sym, resp.Snapshot.Asks, resp.Snapshot.Asks)
+		if err != nil {
+			return err
+		}
+	}
+	if resp.Response != nil {
+		err := doDBInsert(sym, resp.Response.Asks, resp.Response.Asks)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (resp *BinanceFuturesDepthResponse) DeleteFromDatabase(sym string) error {
 	if resp.Snapshot != nil {
 		err := doDBInsert(sym, resp.Snapshot.Asks, resp.Snapshot.Asks)
 		if err != nil {
