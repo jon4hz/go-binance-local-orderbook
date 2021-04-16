@@ -65,7 +65,9 @@ func InitWebsocket(config *config.Config) {
 
 	}
 	errHandler := func(err error) {
-		log.Fatal(err)
+		log.Println("errHandler Triggered")
+		log.Println(err)
+
 	}
 	var monitorWS func(sym string, ch chan struct{})
 	monitorWS = func(sym string, ch chan struct{}) {
