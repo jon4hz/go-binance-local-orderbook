@@ -28,8 +28,9 @@ func main() {
 	// start orderbook watchdog
 	go watchdog.Watcher()
 
-	// start the websocket to binance (blocking with channel)
-	binance.InitWebsocket(config)
+	ch := make(chan struct{})
+	go binance.InitWebsocket(config)
+	<-ch
 }
 
 func loadConfiguration() *config.Config {

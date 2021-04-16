@@ -82,7 +82,6 @@ func InitWebsocket(config *config.Config) {
 			}
 			monitorWS(sym, doneC)
 
-			<-doneC
 		}()
 	}
 	wg := sync.WaitGroup{}
@@ -96,7 +95,6 @@ func InitWebsocket(config *config.Config) {
 		}
 		monitorWS(sym, doneC)
 
-		<-doneC
 	}(config.Exchange.Market)
 	wg.Wait()
 
