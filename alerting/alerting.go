@@ -3,7 +3,7 @@ package alerting
 import (
 	"errors"
 
-	"github.com/jon4hz/go-binance-local-orderbook/alerting/telegram.go"
+	"github.com/jon4hz/go-binance-local-orderbook/alerting/telegram"
 	"github.com/jon4hz/go-binance-local-orderbook/config"
 )
 

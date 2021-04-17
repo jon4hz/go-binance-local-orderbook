@@ -22,7 +22,6 @@ func TriggerTelegramAlert(cfg *config.Config, msg interface{}) error {
 	res, err := client.Do(req)
 	if err != nil {
 		return err
-		//return fmt.Errorf("%s %s", res.Status, err)
 	}
 	switch res.Status {
 	case "200":
