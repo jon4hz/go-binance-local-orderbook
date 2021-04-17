@@ -36,10 +36,7 @@ func InitWebsocket(config *config.Config) {
 					return
 				}
 				msg := alerting.AlertingMSG(fmt.Sprintf("💡 Info: Downloaded new snapshot for coin: %s", config.Exchange.Market))
-				err = alerting.TriggerAlert(config, msg)
-				if err != nil {
-					log.Printf("[binance][alerting] Error triggering alert: %s\n", err)
-				}
+				go alerting.TriggerAlert(config, msg)
 				log.Println("Inserted snapshot into db")
 				exchange.LastUpdateID = snap.LastUpdateID
 			}

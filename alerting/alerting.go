@@ -1,7 +1,7 @@
 package alerting
 
 import (
-	"errors"
+	"log"
 
 	"github.com/jon4hz/go-binance-local-orderbook/alerting/telegram"
 	"github.com/jon4hz/go-binance-local-orderbook/config"
@@ -9,14 +9,14 @@ import (
 
 type AlertingMSG string
 
-func TriggerAlert(cfg *config.Config, msg AlertingMSG) error {
+func TriggerAlert(cfg *config.Config, msg AlertingMSG) {
 	if cfg.Alerting == nil {
-		return errors.New("[alerting][Trigger] No alerting provider configured")
+		log.Printf("[alerting][Trigger] No alerting provider configured")
+		return
 	}
 	if cfg.Alerting.Telegram != nil {
 		if err := telegram.TriggerTelegramAlert(cfg, msg); err != nil {
-			return err
+			log.Printf("[alerting][Telegram] Error: %s\n", err)
 		}
 	}
-	return nil
 }

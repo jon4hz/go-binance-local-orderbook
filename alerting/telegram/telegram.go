@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -10,21 +11,23 @@ import (
 
 func TriggerTelegramAlert(cfg *config.Config, msg interface{}) error {
 	client := &http.Client{}
-	jsonStr := []byte(fmt.Sprintf(`{"chat_id": %d, "text": "%s"}`, cfg.Alerting.Telegram.Chat, msg))
-	request_url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", cfg.Alerting.Telegram.Token)
-	req, err := http.NewRequest(http.MethodPost, request_url, bytes.NewBuffer(jsonStr))
-	fmt.Println(request_url)
-	fmt.Println(string(jsonStr))
+	data := map[string]interface{}{"chat_id": cfg.Alerting.Telegram.Chat, "text": msg}
+	jsonStr, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("content-type", "application-json")
+	request_url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", cfg.Alerting.Telegram.Token)
+	req, err := http.NewRequest(http.MethodPost, request_url, bytes.NewBuffer(jsonStr))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
 	res, err := client.Do(req)
 	if err != nil {
 		return err
 	}
-	switch res.Status {
-	case "200":
+	switch res.StatusCode {
+	case 200:
 		return nil
 	default:
 		return fmt.Errorf("%s", res.Status)
