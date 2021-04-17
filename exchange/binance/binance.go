@@ -2,10 +2,12 @@ package binance
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 
 	"github.com/adshao/go-binance/v2"
+	"github.com/jon4hz/go-binance-local-orderbook/alerting"
 	"github.com/jon4hz/go-binance-local-orderbook/config"
 	"github.com/jon4hz/go-binance-local-orderbook/database"
 	"github.com/jon4hz/go-binance-local-orderbook/exchange"
@@ -21,7 +23,7 @@ func InitWebsocket(config *config.Config) {
 		if exchange.Prev_u == 0 {
 			// download snapshot
 			if exchange.LastUpdateID == 0 {
-				snap, err := downloadSnapshot(*config)
+				snap, err := downloadSnapshot(config)
 				if err != nil {
 					log.Println("Error while downloading the snapshot")
 					return
@@ -32,6 +34,11 @@ func InitWebsocket(config *config.Config) {
 					log.Println(err)
 					// send notification
 					return
+				}
+				msg := alerting.AlertingMSG(fmt.Sprintf("💡 Info: Downloaded new snapshot for coin: %s", config.Exchange.Market))
+				err = alerting.TriggerAlert(config, msg)
+				if err != nil {
+					log.Printf("[binance][alerting] Error triggering alert: %s\n", err)
 				}
 				log.Println("Inserted snapshot into db")
 				exchange.LastUpdateID = snap.LastUpdateID
@@ -100,7 +107,7 @@ func InitWebsocket(config *config.Config) {
 
 }
 
-func downloadSnapshot(config config.Config) (res *binance.DepthResponse, err error) {
+func downloadSnapshot(config *config.Config) (res *binance.DepthResponse, err error) {
 	client := binance.NewClient("", "")
 	res, err = client.NewDepthService().Symbol(config.Exchange.Market).
 		Limit(1000).

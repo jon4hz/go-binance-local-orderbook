@@ -36,6 +36,7 @@ type Config struct {
 	Exchange      *ExchangeConfig `mapstructure:"exchange"`
 	Database      *DatabaseConfig `mapstructure:"database"`
 	DeleteOldSnap bool            `mapstructure:"deleteOldSnap"`
+	Alerting      *AlertingConfig `mapstructure:"alerting"`
 }
 
 func Get() *Config {
@@ -87,6 +88,9 @@ func readConfiguration(fileName string) (config *Config, err error) {
 	viper.BindEnv("database.POSTGRES_PORT", "POSTGRES_PORT")
 
 	viper.BindEnv("deleteOldSnap", "DeleteOldSnap")
+
+	viper.BindEnv("alerting.telegram.TOKEN", "TELEGRAM_TOKEN")
+	viper.BindEnv("alerting.telegram.CHAT", "TELEGRAM_CHAT")
 
 	viper.AutomaticEnv()
 

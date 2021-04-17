@@ -28,7 +28,7 @@ func main() {
 	// start orderbook watchdog
 	go watchdog.Watcher()
 
-	ch := make(chan struct{})
+	ch := make(chan bool)
 	go binance.InitWebsocket(config)
 	<-ch
 }
