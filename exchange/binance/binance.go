@@ -32,35 +32,40 @@ func InitWebsocket(config *config.Config) {
 				err = response.InsertIntoDatabase(config.Database.DBTableMarketName)
 				if err != nil {
 					log.Println(err)
-					// send notification
+					msg := alerting.AlertingMSG(fmt.Sprintf("🚨 Error coin: %s, couldn't insert data %s", config.Exchange.Market, err))
+					go msg.TriggerAlert(config)
 					return
 				}
 				msg := alerting.AlertingMSG(fmt.Sprintf("💡 Info: Downloaded new snapshot for coin: %s", config.Exchange.Market))
-				go alerting.TriggerAlert(config, msg)
-				log.Println("Inserted snapshot into db")
+				go msg.TriggerAlert(config)
+				log.Println("[binance][dbinsert] Inserted snapshot into db")
 				exchange.LastUpdateID = snap.LastUpdateID
 			}
 			if exchange.SmallU >= exchange.LastUpdateID+1 && exchange.BigU <= exchange.LastUpdateID+1 {
 				err := response.InsertIntoDatabase(config.Database.DBTableMarketName)
 				if err != nil {
 					log.Println(err)
-					// send notification
+					msg := alerting.AlertingMSG(fmt.Sprintf("🚨 Error coin: %s, couldn't insert data %s", config.Exchange.Market, err))
+					go msg.TriggerAlert(config)
 					return
 				}
 				exchange.Prev_u = exchange.SmallU
-				log.Println("Inserted first event successfully")
+				log.Println("[binance][dbinsert] Inserted first event successfully")
 			}
 			return
 
 		} else if exchange.BigU >= exchange.Prev_u+1 {
 			if exchange.BigU > exchange.Prev_u+1 {
 				log.Printf("Warning, U = %d and prev_u = %d", exchange.BigU, exchange.Prev_u)
-				// send notification
+				msg := alerting.AlertingMSG(fmt.Sprintf("⚠️ Warning: Orderbook could be out of sync for %s, U: %d, prev_u: %d", config.Exchange.Market, exchange.BigU, exchange.Prev_u))
+				go msg.TriggerAlert(config)
 			}
 			err := response.InsertIntoDatabase(config.Database.DBTableMarketName)
 			if err != nil {
 				log.Println(err)
-				// send notification
+
+				msg := alerting.AlertingMSG(fmt.Sprintf("🚨 Error coin: %s, couldn't insert data %s", config.Exchange.Market, err))
+				go msg.TriggerAlert(config)
 			}
 			exchange.Prev_u = exchange.SmallU
 		} else {
@@ -71,6 +76,8 @@ func InitWebsocket(config *config.Config) {
 	errHandler := func(err error) {
 		log.Println("errHandler Triggered")
 		log.Println(err)
+		msg := alerting.AlertingMSG(fmt.Sprintf("🚨 Websocket error: %s", err))
+		go msg.TriggerAlert(config)
 
 	}
 	var monitorWS func(sym string, ch chan struct{})

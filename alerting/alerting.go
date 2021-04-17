@@ -9,7 +9,7 @@ import (
 
 type AlertingMSG string
 
-func TriggerAlert(cfg *config.Config, msg AlertingMSG) {
+func (msg AlertingMSG) TriggerAlert(cfg *config.Config) {
 	if cfg.Alerting == nil {
 		log.Printf("[alerting][Trigger] No alerting provider configured")
 		return

@@ -31,14 +31,13 @@ func CreateDatabasePool(config *config.Config) (err error) {
 	// create database connection
 	pgxConfig, err := pgxpool.ParseConfig(fmt.Sprintf("postgres://%s:%s@%s:%s/%s", config.Database.DBUser, config.Database.DBPassword, config.Database.DBServer, config.Database.DBPort, config.Database.DBName))
 	if err != nil {
-		log.Fatal("Error configuring the database: ", err)
+		log.Fatal("[database][parseConfig] Error configuring the database: ", err)
 	}
 	// create connection pool
 	ctx := context.Background()
 	dbpool, err = pgxpool.ConnectConfig(ctx, pgxConfig)
 	if err != nil {
-		log.Fatal("Unable to connect to database: ", err)
-		return
+		log.Fatal("[database][connection] Error: Unable to connect to database: ", err)
 	}
 	return
 }
@@ -59,7 +58,7 @@ func InitDatabase(config *config.Config) error {
 				return err
 			}
 		}
-		log.Println("Successfully deleted old depth cache")
+		log.Println("[database][init] Successfully deleted old depth cache")
 	}
 
 	// create tables
@@ -77,7 +76,7 @@ func InitDatabase(config *config.Config) error {
 		);`, config.Database.DBTableMarketName, config.Database.DBTableMarketName)); err != nil {
 		return err
 	}
-	log.Println("Successfully created new tables")
+	log.Println("[database][init] Successfully created new tables")
 	return nil
 }
 
@@ -127,7 +126,7 @@ func doDBInsert(sym string, asks interface{}, bids interface{}) error {
 	for _, v := range oAsks {
 		var quant float64
 		if quant, err = strconv.ParseFloat(v.Quantity, 64); err != nil {
-			fmt.Printf("[database][dbinsert] couldn't convert \"quantity\" to float: %s\n", err)
+			log.Printf("[database][dbinsert] couldn't convert \"quantity\" to float: %s\n", err)
 			return err
 		}
 		if quant == 0 {

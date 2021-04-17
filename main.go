@@ -26,7 +26,7 @@ func main() {
 		log.Fatal(err)
 	}
 	// start orderbook watchdog
-	go watchdog.Watcher()
+	go watchdog.Watcher(config)
 
 	ch := make(chan bool)
 	go binance.InitWebsocket(config)
