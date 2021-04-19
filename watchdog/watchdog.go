@@ -1,7 +1,7 @@
 package watchdog
 
 import (
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/jon4hz/go-binance-local-orderbook/alerting"
@@ -14,7 +14,7 @@ func Watcher(cfg *config.Config) {
 	for {
 		time.Sleep(50 * time.Second)
 		if prev_u == exchange.SmallU {
-			fmt.Println("Error: orderbook didn't change for 50 seconds.")
+			log.Println("Error: orderbook didn't change for 50 seconds.")
 			msg := alerting.AlertingMSG("🚨 Error: orderbook didn't change for 50 seconds.")
 			msg.TriggerAlert(cfg)
 		}
