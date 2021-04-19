@@ -74,8 +74,7 @@ func InitWebsocket(config *config.Config) {
 
 	}
 	errHandler := func(err error) {
-		log.Println("errHandler Triggered")
-		log.Println(err)
+		log.Printf("Error: %s", err)
 		msg := alerting.AlertingMSG(fmt.Sprintf("🚨 Websocket error: %s", err))
 		go msg.TriggerAlert(config)
 
