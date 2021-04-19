@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os"
 	"strings"
 
@@ -16,19 +15,20 @@ func main() {
 	config := loadConfiguration()
 
 	// get database pool
-	err := database.CreateDatabasePool(config)
-	if err != nil {
+	database.Connect(config)
+	/* if err != nil {
 		os.Exit(1)
-	}
+	} */
 
-	err = database.InitDatabase(config)
+	/* err = database.InitDatabase(config)
 	if err != nil {
 		log.Fatal(err)
-	}
+	} */
 	// start orderbook watchdog
 	go watchdog.Watcher(config)
 
 	ch := make(chan bool)
+	// change binance to exchange package
 	go binance.InitWebsocket(config)
 	<-ch
 }
