@@ -10,4 +10,5 @@ var (
 	SmallU       int64
 	BigU         int64
 	Prev_u       int64
+	Notified     bool
 )

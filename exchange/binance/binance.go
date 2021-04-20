@@ -16,6 +16,7 @@ import (
 func InitWebsocket(config *config.Config) {
 	//var response database.DatabaseInsert
 	wsDepthHandler := func(event *binance.WsDepthEvent) {
+		exchange.Notified = false
 		response := &database.BinanceDepthResponse{Response: event}
 		exchange.BigU = event.FirstUpdateID
 		exchange.SmallU = event.UpdateID
@@ -71,13 +72,11 @@ func InitWebsocket(config *config.Config) {
 		} else {
 			log.Println("Error")
 		}
-
 	}
 	errHandler := func(err error) {
 		log.Printf("Error: %s", err)
 		msg := alerting.AlertingMSG(fmt.Sprintf("🚨 Websocket error: %s", err))
 		go msg.TriggerAlert(config.Alerting)
-
 	}
 	var monitorWS func(sym string, ch chan struct{})
 	monitorWS = func(sym string, ch chan struct{}) {
@@ -91,7 +90,6 @@ func InitWebsocket(config *config.Config) {
 				return
 			}
 			monitorWS(sym, doneC)
-
 		}()
 	}
 	wg := sync.WaitGroup{}
@@ -107,7 +105,6 @@ func InitWebsocket(config *config.Config) {
 
 	}(config.Exchange.Market)
 	wg.Wait()
-
 }
 
 func downloadSnapshot(config *config.Config) (res *binance.DepthResponse, err error) {
@@ -116,5 +113,4 @@ func downloadSnapshot(config *config.Config) (res *binance.DepthResponse, err er
 		Limit(1000).
 		Do(context.TODO())
 	return
-
 }

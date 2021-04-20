@@ -79,6 +79,7 @@ func readConfiguration(fileName string) (config *Config, err error) {
 	// set defaults
 	viper.SetDefault("database.POSTGRES_PORT", "5432")
 	viper.SetDefault("deleteOldSnap", true)
+	viper.SetDefault("database.Debug", false)
 
 	// map environment variables to yaml values
 	viper.BindEnv("exchange.NAME", "NAME")
@@ -89,6 +90,8 @@ func readConfiguration(fileName string) (config *Config, err error) {
 	viper.BindEnv("database.POSTGRES_PASSWORD", "POSTGRES_PASSWORD")
 	viper.BindEnv("database.POSTGRES_SERVER", "POSTGRES_SERVER")
 	viper.BindEnv("database.POSTGRES_PORT", "POSTGRES_PORT")
+
+	viper.BindEnv("database.Debug", "DATABASE_DEBUG")
 
 	viper.BindEnv("deleteOldSnap", "DeleteOldSnap")
 
