@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/adshao/go-binance/v2"
 	"github.com/adshao/go-binance/v2/futures"
@@ -21,6 +22,7 @@ type Config struct {
 	DBPort            string `mapstructure:"POSTGRES_PORT"`
 	DBTableMarketName string
 	DBDeleteOldSnap   bool
+	Debug             bool
 }
 
 var (
@@ -47,50 +49,22 @@ func Connect(config *Config) {
 	}
 }
 
-func Init(cfg *Config) error {
+func Init(cfg *Config) (err error) {
 	DBTableMarketName = cfg.DBTableMarketName
-	err := db.AutoMigrate(&ask{}, &bid{})
 
-	return err
-}
-
-/* func InitDatabase(config *config.Config) error {
-	// drop old tables if set to true (default)
-	ctx := context.TODO()
-	conn, err := dbpool.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-	if config.Database.DBDeleteOldSnap {
-		tables := [3]string{"asks", "bids", "general"}
-		for _, table := range tables {
-			if _, err := conn.Exec(ctx,
-				fmt.Sprintf(`DROP TABLE IF EXISTS %s_%s;`, config.Database.DBTableMarketName, table)); err != nil {
-				return err
-			}
+	if cfg.DBDeleteOldSnap {
+		err = db.Migrator().DropTable(&ask{})
+		if err != nil {
+			return
 		}
-		log.Println("[database][init] Successfully deleted old depth cache")
+		err = db.Migrator().DropTable(&bid{})
+		if err != nil {
+			return
+		}
 	}
-
-	// create tables
-	if _, err := conn.Exec(ctx,
-		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s_asks(
-			id varchar(50),
-			quantity varchar(50),
-			PRIMARY KEY(id)
-		);
-
-		CREATE TABLE IF NOT EXISTS %s_bids(
-			id varchar(50),
-			quantity varchar(50),
-			PRIMARY KEY(id)
-		);`, config.Database.DBTableMarketName, config.Database.DBTableMarketName)); err != nil {
-		return err
-	}
-	log.Println("[database][init] Successfully created new tables")
-	return nil
-} */
+	err = db.AutoMigrate(&ask{}, &bid{})
+	return
+}
 
 type bid struct {
 	Price    string `gorm:"primaryKey"`
@@ -142,15 +116,50 @@ func doDBInsert(sym string, asks interface{}, bids interface{}) error {
 		return err
 	}
 
-	db.Clauses(clause.OnConflict{
+	if err := db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "price"}},
 		DoUpdates: clause.AssignmentColumns([]string{"quantity"}),
-	}).Create(&oAsks)
+	}).Create(&oAsks).Error; err != nil {
+		return err
+	}
 
-	db.Clauses(clause.OnConflict{
+	if err := db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "price"}},
 		DoUpdates: clause.AssignmentColumns([]string{"quantity"}),
-	}).Create(&oBids)
+	}).Create(&oBids).Error; err != nil {
+		return err
+	}
+
+	// loop again over bids and asks to delete 0 values
+	var delAsks = []string{}
+	for _, v := range oAsks {
+		var quant float64
+		if quant, err = strconv.ParseFloat(v.Quantity, 64); err != nil {
+			log.Printf("[database][dbinsert] couldn't convert \"quantity\" to float: %s\n", err)
+			return err
+		}
+		if quant == 0 {
+			delAsks = append(delAsks, v.Price)
+		}
+	}
+	if err := db.Delete(&oAsks, delAsks).Error; err != nil {
+		return err
+	}
+
+	var delBids = []string{}
+	for _, v := range oBids {
+		var quant float64
+		if quant, err = strconv.ParseFloat(v.Quantity, 64); err != nil {
+			log.Printf("[database][dbinsert] couldn't convert \"quantity\" to float: %s\n", err)
+			return err
+		}
+		if quant == 0 {
+			delBids = append(delBids, v.Price)
+		}
+	}
+	if err := db.Delete(&oBids, delBids).Error; err != nil {
+		return err
+	}
 
 	return nil
 }
