@@ -1,7 +1,6 @@
 package database
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,12 +8,27 @@ import (
 
 	"github.com/adshao/go-binance/v2"
 	"github.com/adshao/go-binance/v2/futures"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/jon4hz/go-binance-local-orderbook/config"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"gorm.io/gorm/logger"
 )
 
+type Config struct {
+	DBName            string `mapstructure:"POSTGRES_DB"`
+	DBUser            string `mapstructure:"POSTGRES_USER"`
+	DBPassword        string `mapstructure:"POSTGRES_PASSWORD"`
+	DBServer          string `mapstructure:"POSTGRES_SERVER"`
+	DBPort            string `mapstructure:"POSTGRES_PORT"`
+	Debug             bool   `mapstructure:"Debug"`
+	DBTableMarketName string
+	DBDeleteOldSnap   bool
+}
+
 var (
-	dbpool *pgxpool.Pool
+	db                = &gorm.DB{}
+	DBTableMarketName string
 )
 
 type BinanceDepthResponse struct {
@@ -27,75 +41,74 @@ type BinanceFuturesDepthResponse struct {
 	Response *futures.WsDepthEvent
 }
 
-func CreateDatabasePool(config *config.Config) (err error) {
-	// create database connection
-	pgxConfig, err := pgxpool.ParseConfig(fmt.Sprintf("postgres://%s:%s@%s:%s/%s", config.Database.DBUser, config.Database.DBPassword, config.Database.DBServer, config.Database.DBPort, config.Database.DBName))
+func Connect(config *Config) {
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable ", config.DBServer, config.DBUser, config.DBPassword, config.DBName, config.DBPort)
+
+	var gormConfig *gorm.Config
+
+	if !config.Debug {
+		gormConfig = &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Silent),
+		}
+		log.Println("[database][logger] GORM Logger is disabled")
+	} else {
+		log.Println("[database][logger] GORM Logger is enabled")
+	}
+
+	var err error
+	db, err = gorm.Open(postgres.Open(dsn), gormConfig)
 	if err != nil {
 		log.Fatal("[database][parseConfig] Error configuring the database: ", err)
 	}
-	// create connection pool
-	ctx := context.Background()
-	dbpool, err = pgxpool.ConnectConfig(ctx, pgxConfig)
-	if err != nil {
-		log.Fatal("[database][connection] Error: Unable to connect to database: ", err)
+}
+
+func Init(cfg *Config) (err error) {
+	DBTableMarketName = cfg.DBTableMarketName
+
+	if cfg.DBDeleteOldSnap {
+		err = db.Migrator().DropTable(&ask{})
+		if err != nil {
+			return
+		}
+		err = db.Migrator().DropTable(&bid{})
+		if err != nil {
+			return
+		}
+		log.Println("[database][migrator] Deleted old tables successfully")
 	}
+	err = db.AutoMigrate(&ask{}, &bid{})
+	log.Println("[database][migrator] GORM migration successfull")
 	return
 }
 
-func InitDatabase(config *config.Config) error {
-	// drop old tables if set to true (default)
-	ctx := context.TODO()
-	conn, err := dbpool.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-	if config.Database.DBDeleteOldSnap {
-		tables := [3]string{"asks", "bids", "general"}
-		for _, table := range tables {
-			if _, err := conn.Exec(ctx,
-				fmt.Sprintf(`DROP TABLE IF EXISTS %s_%s;`, config.Database.DBTableMarketName, table)); err != nil {
-				return err
-			}
-		}
-		log.Println("[database][init] Successfully deleted old depth cache")
-	}
-
-	// create tables
-	if _, err := conn.Exec(ctx,
-		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s_asks(
-			id varchar(50),
-			quantity varchar(50),
-			PRIMARY KEY(id)
-		);
-		
-		CREATE TABLE IF NOT EXISTS %s_bids(
-			id varchar(50),
-			quantity varchar(50),
-			PRIMARY KEY(id)
-		);`, config.Database.DBTableMarketName, config.Database.DBTableMarketName)); err != nil {
-		return err
-	}
-	log.Println("[database][init] Successfully created new tables")
-	return nil
-}
-
 type bid struct {
-	Price    string
+	Price    string `gorm:"primaryKey"`
 	Quantity string
 }
 
 type ask struct {
-	Price    string
+	Price    string `gorm:"primaryKey"`
 	Quantity string
 }
 
-func createUnifiedStruct(asks interface{}, bids interface{}) ([]*ask, []*bid, error) {
+type Tabler interface {
+	TableName() string
+}
+
+func (ask) TableName() string {
+	return fmt.Sprintf("%s_asks", DBTableMarketName)
+}
+
+func (bid) TableName() string {
+	return fmt.Sprintf("%s_bids", DBTableMarketName)
+}
+
+func createUnifiedStruct(asks interface{}, bids interface{}) ([]ask, []bid, error) {
 	jAsks, err := json.Marshal(asks)
 	if err != nil {
 		return nil, nil, err
 	}
-	oAsks := []*ask{}
+	oAsks := []ask{}
 	err = json.Unmarshal(jAsks, &oAsks)
 	if err != nil {
 		return nil, nil, err
@@ -104,7 +117,7 @@ func createUnifiedStruct(asks interface{}, bids interface{}) ([]*ask, []*bid, er
 	if err != nil {
 		return nil, nil, err
 	}
-	oBids := []*bid{}
+	oBids := []bid{}
 	err = json.Unmarshal(jBids, &oBids)
 	if err != nil {
 		return nil, nil, err
@@ -113,16 +126,25 @@ func createUnifiedStruct(asks interface{}, bids interface{}) ([]*ask, []*bid, er
 }
 
 func doDBInsert(sym string, asks interface{}, bids interface{}) error {
-	conn, err := dbpool.Acquire(context.TODO())
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-	// create unified structs
 	oAsks, oBids, err := createUnifiedStruct(asks, bids)
 	if err != nil {
 		return err
 	}
+
+	if err := db.Clauses(clause.OnConflict{
+		UpdateAll: true,
+	}).Create(&oAsks).Error; err != nil {
+		return err
+	}
+
+	if err := db.Clauses(clause.OnConflict{
+		UpdateAll: true,
+	}).Create(&oBids).Error; err != nil {
+		return err
+	}
+
+	// loop again over bids and asks to delete 0 values
+	var delAsks = []string{}
 	for _, v := range oAsks {
 		var quant float64
 		if quant, err = strconv.ParseFloat(v.Quantity, 64); err != nil {
@@ -130,39 +152,28 @@ func doDBInsert(sym string, asks interface{}, bids interface{}) error {
 			return err
 		}
 		if quant == 0 {
-			if _, err := conn.Exec(context.TODO(),
-				fmt.Sprintf("DELETE FROM %s_asks WHERE id = $1", sym), v.Price); err != nil {
-				log.Printf("Error: %s", err)
-				return err
-			}
-		} else {
-			if _, err := conn.Exec(context.TODO(),
-				fmt.Sprintf("INSERT INTO %s_asks(id, quantity) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET quantity = $3", sym), v.Price, v.Quantity, v.Quantity); err != nil {
-				log.Printf("Error: %s", err)
-				return err
-			}
+			delAsks = append(delAsks, v.Price)
 		}
 	}
+	if err := db.Delete(&oAsks, delAsks).Error; err != nil {
+		return err
+	}
+
+	var delBids = []string{}
 	for _, v := range oBids {
 		var quant float64
 		if quant, err = strconv.ParseFloat(v.Quantity, 64); err != nil {
-			fmt.Printf("[database][dbinsert] couldn't convert \"quantity\" to float: %s\n", err)
+			log.Printf("[database][dbinsert] couldn't convert \"quantity\" to float: %s\n", err)
 			return err
 		}
 		if quant == 0 {
-			if _, err := conn.Exec(context.TODO(),
-				fmt.Sprintf("DELETE FROM %s_bids WHERE id = $1", sym), v.Price); err != nil {
-				log.Printf("Error: %s", err)
-				return err
-			}
-		} else {
-			if _, err := conn.Exec(context.TODO(),
-				fmt.Sprintf("INSERT INTO %s_bids(id, quantity) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET quantity = $3", sym), v.Price, v.Quantity, v.Quantity); err != nil {
-				log.Printf("Error: %s", err)
-				return err
-			}
+			delBids = append(delBids, v.Price)
 		}
 	}
+	if err := db.Delete(&oBids, delBids).Error; err != nil {
+		return err
+	}
+
 	return nil
 }
 

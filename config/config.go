@@ -9,6 +9,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/jon4hz/go-binance-local-orderbook/alerting"
+	"github.com/jon4hz/go-binance-local-orderbook/database"
+	"github.com/jon4hz/go-binance-local-orderbook/exchange"
 	"github.com/spf13/viper"
 )
 
@@ -33,10 +36,10 @@ var (
 )
 
 type Config struct {
-	Exchange      *ExchangeConfig `mapstructure:"exchange"`
-	Database      *DatabaseConfig `mapstructure:"database"`
-	DeleteOldSnap bool            `mapstructure:"deleteOldSnap"`
-	Alerting      *AlertingConfig `mapstructure:"alerting"`
+	Exchange      *exchange.Config `mapstructure:"exchange"`
+	Database      *database.Config `mapstructure:"database"`
+	DeleteOldSnap bool             `mapstructure:"deleteOldSnap"`
+	Alerting      *alerting.Config `mapstructure:"alerting"`
 }
 
 func Get() *Config {
@@ -76,6 +79,7 @@ func readConfiguration(fileName string) (config *Config, err error) {
 	// set defaults
 	viper.SetDefault("database.POSTGRES_PORT", "5432")
 	viper.SetDefault("deleteOldSnap", true)
+	viper.SetDefault("database.Debug", false)
 
 	// map environment variables to yaml values
 	viper.BindEnv("exchange.NAME", "NAME")
@@ -86,6 +90,8 @@ func readConfiguration(fileName string) (config *Config, err error) {
 	viper.BindEnv("database.POSTGRES_PASSWORD", "POSTGRES_PASSWORD")
 	viper.BindEnv("database.POSTGRES_SERVER", "POSTGRES_SERVER")
 	viper.BindEnv("database.POSTGRES_PORT", "POSTGRES_PORT")
+
+	viper.BindEnv("database.Debug", "DATABASE_DEBUG")
 
 	viper.BindEnv("deleteOldSnap", "DeleteOldSnap")
 

@@ -16,12 +16,12 @@ func main() {
 	config := loadConfiguration()
 
 	// get database pool
-	err := database.CreateDatabasePool(config)
-	if err != nil {
+	database.Connect(config.Database)
+	/* if err != nil {
 		os.Exit(1)
-	}
+	} */
 
-	err = database.InitDatabase(config)
+	err := database.Init(config.Database)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,6 +29,7 @@ func main() {
 	go watchdog.Watcher(config)
 
 	ch := make(chan bool)
+	// change binance to exchange package
 	go binance.InitWebsocket(config)
 	<-ch
 }
