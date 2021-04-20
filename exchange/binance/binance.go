@@ -33,11 +33,11 @@ func InitWebsocket(config *config.Config) {
 				if err != nil {
 					log.Println(err)
 					msg := alerting.AlertingMSG(fmt.Sprintf("🚨 Error coin: %s, couldn't insert data %s", config.Exchange.Market, err))
-					go msg.TriggerAlert(config)
+					go msg.TriggerAlert(config.Alerting)
 					return
 				}
 				msg := alerting.AlertingMSG(fmt.Sprintf("💡 Info: Downloaded new snapshot for coin: %s", config.Exchange.Market))
-				go msg.TriggerAlert(config)
+				go msg.TriggerAlert(config.Alerting)
 				log.Println("[binance][dbinsert] Inserted snapshot into db")
 				exchange.LastUpdateID = snap.LastUpdateID
 			}
@@ -46,7 +46,7 @@ func InitWebsocket(config *config.Config) {
 				if err != nil {
 					log.Println(err)
 					msg := alerting.AlertingMSG(fmt.Sprintf("🚨 Error coin: %s, couldn't insert data %s", config.Exchange.Market, err))
-					go msg.TriggerAlert(config)
+					go msg.TriggerAlert(config.Alerting)
 					return
 				}
 				exchange.Prev_u = exchange.SmallU
@@ -58,14 +58,14 @@ func InitWebsocket(config *config.Config) {
 			if exchange.BigU > exchange.Prev_u+1 {
 				log.Printf("Warning, U = %d and prev_u = %d", exchange.BigU, exchange.Prev_u)
 				msg := alerting.AlertingMSG(fmt.Sprintf("⚠️ Warning: Orderbook could be out of sync for %s, U: %d, prev_u: %d", config.Exchange.Market, exchange.BigU, exchange.Prev_u))
-				go msg.TriggerAlert(config)
+				go msg.TriggerAlert(config.Alerting)
 			}
 			err := response.InsertIntoDatabase(config.Database.DBTableMarketName)
 			if err != nil {
 				log.Println(err)
 
 				msg := alerting.AlertingMSG(fmt.Sprintf("🚨 Error coin: %s, couldn't insert data %s", config.Exchange.Market, err))
-				go msg.TriggerAlert(config)
+				go msg.TriggerAlert(config.Alerting)
 			}
 			exchange.Prev_u = exchange.SmallU
 		} else {
@@ -76,7 +76,7 @@ func InitWebsocket(config *config.Config) {
 	errHandler := func(err error) {
 		log.Printf("Error: %s", err)
 		msg := alerting.AlertingMSG(fmt.Sprintf("🚨 Websocket error: %s", err))
-		go msg.TriggerAlert(config)
+		go msg.TriggerAlert(config.Alerting)
 
 	}
 	var monitorWS func(sym string, ch chan struct{})

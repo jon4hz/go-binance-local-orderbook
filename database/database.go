@@ -11,12 +11,21 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-
-	"github.com/jon4hz/go-binance-local-orderbook/config"
 )
 
+type Config struct {
+	DBName            string `mapstructure:"POSTGRES_DB"`
+	DBUser            string `mapstructure:"POSTGRES_USER"`
+	DBPassword        string `mapstructure:"POSTGRES_PASSWORD"`
+	DBServer          string `mapstructure:"POSTGRES_SERVER"`
+	DBPort            string `mapstructure:"POSTGRES_PORT"`
+	DBTableMarketName string
+	DBDeleteOldSnap   bool
+}
+
 var (
-	db = &gorm.DB{}
+	db                = &gorm.DB{}
+	DBTableMarketName string
 )
 
 type BinanceDepthResponse struct {
@@ -29,13 +38,20 @@ type BinanceFuturesDepthResponse struct {
 	Response *futures.WsDepthEvent
 }
 
-func Connect(config *config.Config) {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable ", config.Database.DBServer, config.Database.DBUser, config.Database.DBPassword, config.Database.DBName, config.Database.DBPort)
+func Connect(config *Config) {
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable ", config.DBServer, config.DBUser, config.DBPassword, config.DBName, config.DBPort)
 	var err error
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("[database][parseConfig] Error configuring the database: ", err)
 	}
+}
+
+func Init(cfg *Config) error {
+	DBTableMarketName = cfg.DBTableMarketName
+	err := db.AutoMigrate(&ask{}, &bid{})
+
+	return err
 }
 
 /* func InitDatabase(config *config.Config) error {
@@ -91,11 +107,11 @@ type Tabler interface {
 }
 
 func (ask) TableName() string {
-	return fmt.Sprintf("%s_asks", "BTCUSDT")
+	return fmt.Sprintf("%s_asks", DBTableMarketName)
 }
 
 func (bid) TableName() string {
-	return fmt.Sprintf("%s_bids", "BTCUSDT")
+	return fmt.Sprintf("%s_bids", DBTableMarketName)
 }
 
 func createUnifiedStruct(asks interface{}, bids interface{}) ([]ask, []bid, error) {
@@ -127,12 +143,12 @@ func doDBInsert(sym string, asks interface{}, bids interface{}) error {
 	}
 
 	db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "id"}},
+		Columns:   []clause.Column{{Name: "price"}},
 		DoUpdates: clause.AssignmentColumns([]string{"quantity"}),
 	}).Create(&oAsks)
 
 	db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "id"}},
+		Columns:   []clause.Column{{Name: "price"}},
 		DoUpdates: clause.AssignmentColumns([]string{"quantity"}),
 	}).Create(&oBids)
 

@@ -9,6 +9,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/jon4hz/go-binance-local-orderbook/alerting"
+	"github.com/jon4hz/go-binance-local-orderbook/database"
+	"github.com/jon4hz/go-binance-local-orderbook/exchange"
 	"github.com/spf13/viper"
 )
 
@@ -33,10 +36,10 @@ var (
 )
 
 type Config struct {
-	Exchange      *ExchangeConfig `mapstructure:"exchange"`
-	Database      *DatabaseConfig `mapstructure:"database"`
-	DeleteOldSnap bool            `mapstructure:"deleteOldSnap"`
-	Alerting      *AlertingConfig `mapstructure:"alerting"`
+	Exchange      *exchange.Config `mapstructure:"exchange"`
+	Database      *database.Config `mapstructure:"database"`
+	DeleteOldSnap bool             `mapstructure:"deleteOldSnap"`
+	Alerting      *alerting.Config `mapstructure:"alerting"`
 }
 
 func Get() *Config {

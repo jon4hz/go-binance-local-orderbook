@@ -5,18 +5,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"github.com/jon4hz/go-binance-local-orderbook/config"
 )
 
-func TriggerTelegramAlert(cfg *config.Config, msg interface{}) error {
+type Config struct {
+	Token string `mapstructure:"TOKEN"`
+	Chat  int64  `mapstructure:"CHAT"`
+}
+
+func TriggerTelegramAlert(cfg *Config, msg interface{}) error {
 	client := &http.Client{}
-	data := map[string]interface{}{"chat_id": cfg.Alerting.Telegram.Chat, "text": msg}
+	data := map[string]interface{}{"chat_id": cfg.Chat, "text": msg}
 	jsonStr, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
-	request_url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", cfg.Alerting.Telegram.Token)
+	request_url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", cfg.Token)
 	req, err := http.NewRequest(http.MethodPost, request_url, bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return err

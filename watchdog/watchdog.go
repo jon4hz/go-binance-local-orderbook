@@ -16,7 +16,7 @@ func Watcher(cfg *config.Config) {
 		if prev_u == exchange.SmallU {
 			log.Println("Error: orderbook didn't change for 50 seconds.")
 			msg := alerting.AlertingMSG("🚨 Error: orderbook didn't change for 50 seconds.")
-			msg.TriggerAlert(cfg)
+			msg.TriggerAlert(cfg.Alerting)
 		}
 		prev_u = exchange.SmallU
 	}

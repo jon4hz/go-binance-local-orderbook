@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"strings"
 
@@ -15,15 +16,15 @@ func main() {
 	config := loadConfiguration()
 
 	// get database pool
-	database.Connect(config)
+	database.Connect(config.Database)
 	/* if err != nil {
 		os.Exit(1)
 	} */
 
-	/* err = database.InitDatabase(config)
+	err := database.Init(config.Database)
 	if err != nil {
 		log.Fatal(err)
-	} */
+	}
 	// start orderbook watchdog
 	go watchdog.Watcher(config)
 
