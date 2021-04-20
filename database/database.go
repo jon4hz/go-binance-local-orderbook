@@ -117,15 +117,13 @@ func doDBInsert(sym string, asks interface{}, bids interface{}) error {
 	}
 
 	if err := db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "price"}},
-		DoUpdates: clause.AssignmentColumns([]string{"quantity"}),
+		UpdateAll: true,
 	}).Create(&oAsks).Error; err != nil {
 		return err
 	}
 
 	if err := db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "price"}},
-		DoUpdates: clause.AssignmentColumns([]string{"quantity"}),
+		UpdateAll: true,
 	}).Create(&oBids).Error; err != nil {
 		return err
 	}
