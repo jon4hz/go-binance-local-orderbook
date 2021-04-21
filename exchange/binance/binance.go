@@ -87,7 +87,6 @@ func InitWebsocket(config *config.Config) {
 			doneC, _, err := binance.WsDepthServe(sym, wsDepthHandler, errHandler)
 			if err != nil {
 				log.Printf("error registering symbol %s: %v", sym, err)
-				return
 			}
 			monitorWS(sym, doneC)
 		}()
