@@ -18,7 +18,7 @@ func InitWebsocket(config *config.Config) {
 
 	// set keepalive vars
 	binance.WebsocketKeepalive = true
-	binance.WebsocketTimeout = time.Second * 40
+	binance.WebsocketTimeout = time.Minute * 8
 
 	//var response database.DatabaseInsert
 	wsDepthHandler := func(event *binance.WsDepthEvent) {
