@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/adshao/go-binance/v2"
 	"github.com/jon4hz/go-binance-local-orderbook/alerting"
@@ -14,6 +15,11 @@ import (
 )
 
 func InitWebsocket(config *config.Config) {
+
+	// set keepalive vars
+	binance.WebsocketKeepalive = true
+	binance.WebsocketTimeout = time.Second * 40
+
 	//var response database.DatabaseInsert
 	wsDepthHandler := func(event *binance.WsDepthEvent) {
 		exchange.Notified = false
