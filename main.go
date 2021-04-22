@@ -8,6 +8,7 @@ import (
 	"github.com/jon4hz/go-binance-local-orderbook/config"
 	"github.com/jon4hz/go-binance-local-orderbook/database"
 	"github.com/jon4hz/go-binance-local-orderbook/exchange/binance"
+	"github.com/jon4hz/go-binance-local-orderbook/exchange/binance_futures"
 	"github.com/jon4hz/go-binance-local-orderbook/watchdog"
 )
 
@@ -17,9 +18,6 @@ func main() {
 
 	// get database pool
 	database.Connect(config.Database)
-	/* if err != nil {
-		os.Exit(1)
-	} */
 
 	err := database.Init(config.Database)
 	if err != nil {
@@ -29,8 +27,7 @@ func main() {
 	go watchdog.Watcher(config)
 
 	ch := make(chan bool)
-	// change binance to exchange package
-	go binance.InitWebsocket(config)
+	startSocketInBackground(config)
 	<-ch
 }
 
@@ -49,4 +46,14 @@ func loadConfiguration() *config.Config {
 	cfg.Database.DBTableMarketName = strings.ToLower(cfg.Exchange.Market)
 	cfg.Database.DBDeleteOldSnap = cfg.DeleteOldSnap
 	return cfg
+}
+
+func startSocketInBackground(cfg *config.Config) {
+	switch cfg.Exchange.Name {
+	case "binance-futures":
+		go binance_futures.InitWebsocket(cfg)
+	default:
+		go binance.InitWebsocket(cfg)
+	}
+
 }

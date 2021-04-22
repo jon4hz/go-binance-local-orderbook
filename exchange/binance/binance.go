@@ -18,7 +18,7 @@ func InitWebsocket(config *config.Config) {
 
 	// set keepalive vars
 	binance.WebsocketKeepalive = true
-	binance.WebsocketTimeout = time.Minute * 8
+	binance.WebsocketTimeout = time.Second * 6
 
 	//var response database.DatabaseInsert
 	wsDepthHandler := func(event *binance.WsDepthEvent) {
@@ -26,13 +26,14 @@ func InitWebsocket(config *config.Config) {
 		response := &database.BinanceDepthResponse{Response: event}
 		exchange.BigU = event.FirstUpdateID
 		exchange.SmallU = event.UpdateID
+
 		// first time
 		if exchange.Prev_u == 0 {
 			// download snapshot
 			if exchange.LastUpdateID == 0 {
 				snap, err := downloadSnapshot(config)
 				if err != nil {
-					log.Println("Error while downloading the snapshot")
+					log.Println("[exchange][snapshot] Error while downloading the snapshot: ", err)
 					return
 				}
 				response = &database.BinanceDepthResponse{Snapshot: snap}
@@ -45,7 +46,7 @@ func InitWebsocket(config *config.Config) {
 				}
 				msg := alerting.AlertingMSG(fmt.Sprintf("💡 Info: Downloaded new snapshot for coin: %s", config.Exchange.Market))
 				go msg.TriggerAlert(config.Alerting)
-				log.Println("[binance][dbinsert] Inserted snapshot into db")
+				log.Println("[exchange][dbinsert] Inserted snapshot into db")
 				exchange.LastUpdateID = snap.LastUpdateID
 			}
 			if exchange.SmallU >= exchange.LastUpdateID+1 && exchange.BigU <= exchange.LastUpdateID+1 {
@@ -57,13 +58,13 @@ func InitWebsocket(config *config.Config) {
 					return
 				}
 				exchange.Prev_u = exchange.SmallU
-				log.Println("[binance][dbinsert] Inserted first event successfully")
+				log.Println("[exchange][dbinsert] Inserted first event successfully")
 			}
 			return
 
 		} else if exchange.BigU >= exchange.Prev_u+1 {
 			if exchange.BigU > exchange.Prev_u+1 {
-				log.Printf("Warning, U = %d and prev_u = %d", exchange.BigU, exchange.Prev_u)
+				log.Printf("[exchange][missmatch cond.] Warning, U = %d and prev_u = %d", exchange.BigU, exchange.Prev_u)
 				msg := alerting.AlertingMSG(fmt.Sprintf("⚠️ Warning: Orderbook could be out of sync for %s, U: %d, prev_u: %d", config.Exchange.Market, exchange.BigU, exchange.Prev_u))
 				go msg.TriggerAlert(config.Alerting)
 			}
@@ -89,10 +90,16 @@ func InitWebsocket(config *config.Config) {
 		go func() {
 			<-ch
 			// ws disconnected, try to re-establish.
-			log.Printf("Websocket for %s crashed, spawning a new one.", sym)
+			log.Printf("[exchange][websocket] Websocket for %s crashed, spawning a new one.", sym)
 			doneC, _, err := binance.WsDepthServe(sym, wsDepthHandler, errHandler)
 			if err != nil {
-				log.Printf("error registering symbol %s: %v", sym, err)
+				log.Printf("[exchange][reconnect] Error registering symbol %s: %v", sym, err)
+				for err != nil {
+					time.Sleep(time.Second / 10)
+					doneC, _, err = binance.WsDepthServe(sym, wsDepthHandler, errHandler)
+
+				}
+				log.Println("[exchange][reconnect] Connection established", sym, err)
 			}
 			monitorWS(sym, doneC)
 		}()
@@ -104,7 +111,11 @@ func InitWebsocket(config *config.Config) {
 		defer wg.Done()
 		doneC, _, err := binance.WsDepthServe(sym, wsDepthHandler, errHandler)
 		if err != nil {
-			log.Printf("error registering symbol %s: %v", sym, err)
+			log.Printf("[exchange][reconnect] Error registering symbol %s: %v", sym, err)
+			for err != nil {
+				time.Sleep(time.Second / 10)
+				doneC, _, err = binance.WsDepthServe(sym, wsDepthHandler, errHandler)
+			}
 		}
 		monitorWS(sym, doneC)
 
@@ -115,7 +126,7 @@ func InitWebsocket(config *config.Config) {
 func downloadSnapshot(config *config.Config) (res *binance.DepthResponse, err error) {
 	client := binance.NewClient("", "")
 	res, err = client.NewDepthService().Symbol(config.Exchange.Market).
-		Limit(1000).
+		Limit(5000).
 		Do(context.TODO())
 	return
 }
