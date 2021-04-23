@@ -1,9 +1,9 @@
 package database
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
+	"reflect"
 	"strconv"
 
 	"github.com/adshao/go-binance/v2"
@@ -44,12 +44,10 @@ type BinanceFuturesDepthResponse struct {
 func Connect(config *Config) {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable ", config.DBServer, config.DBUser, config.DBPassword, config.DBName, config.DBPort)
 
-	var gormConfig *gorm.Config
+	var gormConfig = &gorm.Config{}
 
 	if !config.Debug {
-		gormConfig = &gorm.Config{
-			Logger: logger.Default.LogMode(logger.Silent),
-		}
+		gormConfig.Logger = logger.Default.LogMode(logger.Silent)
 		log.Println("[database][logger] GORM Logger is disabled")
 	} else {
 		log.Println("[database][logger] GORM Logger is enabled")
@@ -82,13 +80,13 @@ func Init(cfg *Config) (err error) {
 }
 
 type bid struct {
-	Price    string `gorm:"primaryKey"`
-	Quantity string
+	Price    float64 `gorm:"primaryKey"`
+	Quantity float64
 }
 
 type ask struct {
-	Price    string `gorm:"primaryKey"`
-	Quantity string
+	Price    float64 `gorm:"primaryKey"`
+	Quantity float64
 }
 
 type Tabler interface {
@@ -103,25 +101,61 @@ func (bid) TableName() string {
 	return fmt.Sprintf("%s_bids", DBTableMarketName)
 }
 
-func createUnifiedStruct(asks interface{}, bids interface{}) ([]ask, []bid, error) {
-	jAsks, err := json.Marshal(asks)
-	if err != nil {
-		return nil, nil, err
+func createUnifiedStruct(asks, bids interface{}) ([]ask, []bid, error) {
+	var err error
+
+	tmpA := reflect.ValueOf(asks)
+	// convert datatype
+	if tmpA.Kind() != reflect.Slice {
+		return nil, nil, fmt.Errorf("error converting asks interface to slice")
 	}
-	oAsks := []ask{}
-	err = json.Unmarshal(jAsks, &oAsks)
-	if err != nil {
-		return nil, nil, err
+
+	oAsks := make([]ask, tmpA.Len())
+
+	for i := 0; i < tmpA.Len(); i++ {
+		switch x := tmpA.Index(i).Interface().(type) {
+		case binance.Ask:
+			oAsks[i].Price, err = strconv.ParseFloat(x.Price, 64)
+			if err != nil {
+				return nil, nil, fmt.Errorf("error converting ask string to int64")
+			}
+		case futures.Ask:
+			oAsks[i].Price, err = strconv.ParseFloat(x.Price, 64)
+			if err != nil {
+				return nil, nil, fmt.Errorf("error converting ask string to int64")
+			}
+		default:
+			return nil, nil, fmt.Errorf("error no matching type found for switch statement")
+		}
+
 	}
-	jBids, err := json.Marshal(bids)
-	if err != nil {
-		return nil, nil, err
+
+	tmpB := reflect.ValueOf(bids)
+	// convert datatype
+	if tmpB.Kind() != reflect.Slice {
+		return nil, nil, fmt.Errorf("error converting bids interface to slice")
 	}
-	oBids := []bid{}
-	err = json.Unmarshal(jBids, &oBids)
-	if err != nil {
-		return nil, nil, err
+
+	oBids := make([]bid, tmpB.Len())
+
+	for i := 0; i < tmpB.Len(); i++ {
+		switch x := tmpB.Index(i).Interface().(type) {
+		case binance.Bid:
+			oBids[i].Price, err = strconv.ParseFloat(x.Price, 64)
+			if err != nil {
+				return nil, nil, fmt.Errorf("error converting bid string to int64")
+			}
+		case futures.Bid:
+			oBids[i].Price, err = strconv.ParseFloat(x.Price, 64)
+			if err != nil {
+				return nil, nil, fmt.Errorf("error converting bid string to int64")
+			}
+		default:
+			return nil, nil, fmt.Errorf("error no matching type found for switch statement")
+		}
+
 	}
+
 	return oAsks, oBids, nil
 }
 
@@ -145,7 +179,7 @@ func doDBInsert(sym string, asks interface{}, bids interface{}) error {
 
 	// loop again over bids and asks to delete 0 values
 	var delAsks = []string{}
-	for _, v := range oAsks {
+	/* for _, v := range oAsks {
 		var quant float64
 		if quant, err = strconv.ParseFloat(v.Quantity, 64); err != nil {
 			log.Printf("[database][dbinsert] couldn't convert \"quantity\" to float: %s\n", err)
@@ -154,13 +188,13 @@ func doDBInsert(sym string, asks interface{}, bids interface{}) error {
 		if quant == 0 {
 			delAsks = append(delAsks, v.Price)
 		}
-	}
+	} */
 	if err := db.Delete(&oAsks, delAsks).Error; err != nil {
 		return err
 	}
 
 	var delBids = []string{}
-	for _, v := range oBids {
+	/* for _, v := range oBids {
 		var quant float64
 		if quant, err = strconv.ParseFloat(v.Quantity, 64); err != nil {
 			log.Printf("[database][dbinsert] couldn't convert \"quantity\" to float: %s\n", err)
@@ -169,7 +203,7 @@ func doDBInsert(sym string, asks interface{}, bids interface{}) error {
 		if quant == 0 {
 			delBids = append(delBids, v.Price)
 		}
-	}
+	} */
 	if err := db.Delete(&oBids, delBids).Error; err != nil {
 		return err
 	}
@@ -179,13 +213,13 @@ func doDBInsert(sym string, asks interface{}, bids interface{}) error {
 
 func (resp *BinanceDepthResponse) InsertIntoDatabase(sym string) error {
 	if resp.Snapshot != nil {
-		err := doDBInsert(sym, resp.Snapshot.Asks, resp.Snapshot.Asks)
+		err := doDBInsert(sym, resp.Snapshot.Asks, resp.Snapshot.Bids)
 		if err != nil {
 			return err
 		}
 	}
 	if resp.Response != nil {
-		err := doDBInsert(sym, resp.Response.Asks, resp.Response.Asks)
+		err := doDBInsert(sym, resp.Response.Asks, resp.Response.Bids)
 		if err != nil {
 			return err
 		}
@@ -195,45 +229,13 @@ func (resp *BinanceDepthResponse) InsertIntoDatabase(sym string) error {
 
 func (resp *BinanceFuturesDepthResponse) InsertIntoDatabase(sym string) error {
 	if resp.Snapshot != nil {
-		err := doDBInsert(sym, resp.Snapshot.Asks, resp.Snapshot.Asks)
+		err := doDBInsert(sym, resp.Snapshot.Asks, resp.Snapshot.Bids)
 		if err != nil {
 			return err
 		}
 	}
 	if resp.Response != nil {
-		err := doDBInsert(sym, resp.Response.Asks, resp.Response.Asks)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (resp *BinanceDepthResponse) DeleteFromDatabase(sym string) error {
-	if resp.Snapshot != nil {
-		err := doDBInsert(sym, resp.Snapshot.Asks, resp.Snapshot.Asks)
-		if err != nil {
-			return err
-		}
-	}
-	if resp.Response != nil {
-		err := doDBInsert(sym, resp.Response.Asks, resp.Response.Asks)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (resp *BinanceFuturesDepthResponse) DeleteFromDatabase(sym string) error {
-	if resp.Snapshot != nil {
-		err := doDBInsert(sym, resp.Snapshot.Asks, resp.Snapshot.Asks)
-		if err != nil {
-			return err
-		}
-	}
-	if resp.Response != nil {
-		err := doDBInsert(sym, resp.Response.Asks, resp.Response.Asks)
+		err := doDBInsert(sym, resp.Response.Asks, resp.Response.Bids)
 		if err != nil {
 			return err
 		}
