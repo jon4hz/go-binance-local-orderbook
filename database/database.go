@@ -117,12 +117,21 @@ func createUnifiedStruct(asks, bids interface{}) ([]ask, []bid, error) {
 		case binance.Ask:
 			oAsks[i].Price, err = strconv.ParseFloat(x.Price, 64)
 			if err != nil {
-				return nil, nil, fmt.Errorf("error converting ask string to int64")
+				return nil, nil, fmt.Errorf("error converting ask price string to int64")
+			}
+			oAsks[i].Quantity, err = strconv.ParseFloat(x.Quantity, 64)
+			if err != nil {
+				return nil, nil, fmt.Errorf("error converting ask quantity string to int64")
 			}
 		case futures.Ask:
 			oAsks[i].Price, err = strconv.ParseFloat(x.Price, 64)
 			if err != nil {
-				return nil, nil, fmt.Errorf("error converting ask string to int64")
+
+				return nil, nil, fmt.Errorf("error converting ask price string to int64")
+			}
+			oAsks[i].Quantity, err = strconv.ParseFloat(x.Quantity, 64)
+			if err != nil {
+				return nil, nil, fmt.Errorf("error converting ask quantity string to int64")
 			}
 		default:
 			return nil, nil, fmt.Errorf("error no matching type found for switch statement")
@@ -143,19 +152,26 @@ func createUnifiedStruct(asks, bids interface{}) ([]ask, []bid, error) {
 		case binance.Bid:
 			oBids[i].Price, err = strconv.ParseFloat(x.Price, 64)
 			if err != nil {
-				return nil, nil, fmt.Errorf("error converting bid string to int64")
+				return nil, nil, fmt.Errorf("error converting bid price string to int64")
+			}
+			oBids[i].Quantity, err = strconv.ParseFloat(x.Quantity, 64)
+			if err != nil {
+				return nil, nil, fmt.Errorf("error converting bid quantity string to int64")
 			}
 		case futures.Bid:
 			oBids[i].Price, err = strconv.ParseFloat(x.Price, 64)
 			if err != nil {
-				return nil, nil, fmt.Errorf("error converting bid string to int64")
+				return nil, nil, fmt.Errorf("error converting bid price string to int64")
+			}
+			oBids[i].Quantity, err = strconv.ParseFloat(x.Quantity, 64)
+			if err != nil {
+				return nil, nil, fmt.Errorf("error converting bid quantity string to int64")
 			}
 		default:
 			return nil, nil, fmt.Errorf("error no matching type found for switch statement")
 		}
 
 	}
-
 	return oAsks, oBids, nil
 }
 
@@ -178,34 +194,28 @@ func doDBInsert(sym string, asks interface{}, bids interface{}) error {
 	}
 
 	// loop again over bids and asks to delete 0 values
-	var delAsks = []string{}
-	/* for _, v := range oAsks {
-		var quant float64
-		if quant, err = strconv.ParseFloat(v.Quantity, 64); err != nil {
-			log.Printf("[database][dbinsert] couldn't convert \"quantity\" to float: %s\n", err)
-			return err
-		}
-		if quant == 0 {
+	var delAsks = []float64{}
+	for _, v := range oAsks {
+		if v.Quantity == 0 {
 			delAsks = append(delAsks, v.Price)
 		}
-	} */
-	if err := db.Delete(&oAsks, delAsks).Error; err != nil {
-		return err
 	}
-
-	var delBids = []string{}
-	/* for _, v := range oBids {
-		var quant float64
-		if quant, err = strconv.ParseFloat(v.Quantity, 64); err != nil {
-			log.Printf("[database][dbinsert] couldn't convert \"quantity\" to float: %s\n", err)
+	if len(delAsks) > 0 {
+		if err := db.Delete(&oAsks, delAsks).Error; err != nil {
 			return err
 		}
-		if quant == 0 {
+	}
+
+	var delBids = []float64{}
+	for _, v := range oBids {
+		if v.Quantity == 0 {
 			delBids = append(delBids, v.Price)
 		}
-	} */
-	if err := db.Delete(&oBids, delBids).Error; err != nil {
-		return err
+	}
+	if len(delBids) > 0 {
+		if err := db.Delete(&oBids, delBids).Error; err != nil {
+			return err
+		}
 	}
 
 	return nil
