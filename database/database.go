@@ -75,7 +75,7 @@ func Init(cfg *Config) (err error) {
 		log.Println("[database][migrator] Deleted old tables successfully")
 	}
 	err = db.AutoMigrate(&ask{}, &bid{})
-	log.Println("[database][migrator] GORM migration successfull")
+	log.Println("[database][migrator] GORM migration successful")
 	return
 }
 
