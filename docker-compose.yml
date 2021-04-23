@@ -8,7 +8,7 @@ services:
     hostname: orderbook
     restart: unless-stopped
     environment:
-      NAME: binance
+      NAME: binance-futures
       MARKET: BTCUSDT
       POSTGRES_DB: orderbook
       POSTGRES_SERVER: orderbook_db
@@ -16,6 +16,7 @@ services:
       POSTGRES_USER: orderbook
     env_file:
       - .env-orderbook
+    depends_on: orderbook_db
 
   orderbook_db:
     image: postgres:13

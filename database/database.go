@@ -44,12 +44,10 @@ type BinanceFuturesDepthResponse struct {
 func Connect(config *Config) {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable ", config.DBServer, config.DBUser, config.DBPassword, config.DBName, config.DBPort)
 
-	var gormConfig *gorm.Config
+	var gormConfig = &gorm.Config{}
 
 	if !config.Debug {
-		gormConfig = &gorm.Config{
-			Logger: logger.Default.LogMode(logger.Silent),
-		}
+		gormConfig.Logger = logger.Default.LogMode(logger.Silent)
 		log.Println("[database][logger] GORM Logger is disabled")
 	} else {
 		log.Println("[database][logger] GORM Logger is enabled")
