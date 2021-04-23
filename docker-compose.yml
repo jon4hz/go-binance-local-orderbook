@@ -16,7 +16,8 @@ services:
       POSTGRES_USER: orderbook
     env_file:
       - .env-orderbook
-    depends_on: orderbook_db
+    depends_on: 
+      - orderbook_db
 
   orderbook_db:
     image: postgres:13
