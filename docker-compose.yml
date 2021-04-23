@@ -2,8 +2,7 @@
 version: '3.5'
 services:
   orderbook:
-    build:
-      context: .
+    image: jon4hz/go-binance-local-orderbook
     container_name: orderbook
     hostname: orderbook
     restart: unless-stopped
