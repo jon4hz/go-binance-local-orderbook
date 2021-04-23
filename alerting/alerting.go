@@ -17,10 +17,12 @@ type Config struct {
 }
 
 func (msg AlertingMSG) TriggerAlert(cfg *Config) {
-	if cfg == nil && Enabled {
-		log.Printf("[alerting][Trigger] No alerting provider configured")
-		// disable alerting
-		Enabled = false
+	if cfg == nil {
+		if Enabled {
+			log.Printf("[alerting][Trigger] No alerting provider configured")
+			// disable alerting
+			Enabled = false
+		}
 		return
 	}
 	if cfg.Telegram != nil && Enabled {
