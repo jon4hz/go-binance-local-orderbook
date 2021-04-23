@@ -157,26 +157,6 @@ func createUnifiedStruct(asks, bids interface{}) ([]ask, []bid, error) {
 	}
 
 	return oAsks, oBids, nil
-
-	/* jAsks, err := json.Marshal(asks)
-	if err != nil {
-		return nil, nil, err
-	}
-	_ := []ask{}
-	err = json.Unmarshal(jAsks, &oAsks)
-	if err != nil {
-		return nil, nil, err
-	}
-	jBids, err := json.Marshal(bids)
-	if err != nil {
-		return nil, nil, err
-	}
-	oBids := []bid{}
-	err = json.Unmarshal(jBids, &oBids)
-	if err != nil {
-		return nil, nil, err
-	} */
-	return nil, nil, nil
 }
 
 func doDBInsert(sym string, asks interface{}, bids interface{}) error {
