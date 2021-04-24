@@ -150,11 +150,11 @@ func (resp *BinanceDepthResponse) InsertIntoDatabase(sym string) error {
 		for i, v := range resp.Snapshot.Asks {
 			asks[i].Price, err = strconv.ParseFloat(v.Price, 64)
 			if err != nil {
-				return fmt.Errorf("error converting bid price string to int64: %s", err)
+				return fmt.Errorf("error converting ask price string to int64: %s", err)
 			}
 			asks[i].Quantity, err = strconv.ParseFloat(v.Quantity, 64)
 			if err != nil {
-				return fmt.Errorf("error converting bid quantity string to int64: %s", err)
+				return fmt.Errorf("error converting ask quantity string to int64: %s", err)
 			}
 		}
 		// convert bids to int64
@@ -182,11 +182,11 @@ func (resp *BinanceDepthResponse) InsertIntoDatabase(sym string) error {
 		for i, v := range resp.Response.Asks {
 			asks[i].Price, err = strconv.ParseFloat(v.Price, 64)
 			if err != nil {
-				return fmt.Errorf("error converting bid price string to int64: %s", err)
+				return fmt.Errorf("error converting ask price string to int64: %s", err)
 			}
 			asks[i].Quantity, err = strconv.ParseFloat(v.Quantity, 64)
 			if err != nil {
-				return fmt.Errorf("error converting bid quantity string to int64: %s", err)
+				return fmt.Errorf("error converting ask quantity string to int64: %s", err)
 			}
 		}
 		// convert bids to int64
@@ -218,11 +218,11 @@ func (resp *BinanceFuturesDepthResponse) InsertIntoDatabase(sym string) error {
 		for i, v := range resp.Snapshot.Asks {
 			asks[i].Price, err = strconv.ParseFloat(v.Price, 64)
 			if err != nil {
-				return fmt.Errorf("error converting bid price string to int64: %s", err)
+				return fmt.Errorf("error converting ask price string to int64: %s", err)
 			}
 			asks[i].Quantity, err = strconv.ParseFloat(v.Quantity, 64)
 			if err != nil {
-				return fmt.Errorf("error converting bid quantity string to int64: %s", err)
+				return fmt.Errorf("error converting ask quantity string to int64: %s", err)
 			}
 		}
 		// convert bids to int64
@@ -250,11 +250,11 @@ func (resp *BinanceFuturesDepthResponse) InsertIntoDatabase(sym string) error {
 		for i, v := range resp.Response.Asks {
 			asks[i].Price, err = strconv.ParseFloat(v.Price, 64)
 			if err != nil {
-				return fmt.Errorf("error converting bid price string to int64: %s", err)
+				return fmt.Errorf("error converting ask price string to int64: %s", err)
 			}
 			asks[i].Quantity, err = strconv.ParseFloat(v.Quantity, 64)
 			if err != nil {
-				return fmt.Errorf("error converting bid quantity string to int64: %s", err)
+				return fmt.Errorf("error converting ask quantity string to int64: %s", err)
 			}
 		}
 		// convert bids to int64
