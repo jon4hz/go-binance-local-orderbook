@@ -101,17 +101,20 @@ func (bid) TableName() string {
 }
 
 func doDBInsert(sym string, asks []ask, bids []bid) error {
-
-	if err := db.Clauses(clause.OnConflict{
-		UpdateAll: true,
-	}).Create(&asks).Error; err != nil {
-		return err
+	if len(asks) > 0 {
+		if err := db.Clauses(clause.OnConflict{
+			UpdateAll: true,
+		}).Create(&asks).Error; err != nil {
+			return err
+		}
 	}
 
-	if err := db.Clauses(clause.OnConflict{
-		UpdateAll: true,
-	}).Create(&bids).Error; err != nil {
-		return err
+	if len(bids) > 0 {
+		if err := db.Clauses(clause.OnConflict{
+			UpdateAll: true,
+		}).Create(&bids).Error; err != nil {
+			return err
+		}
 	}
 
 	// loop again over bids and asks to delete 0 values
