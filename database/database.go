@@ -3,7 +3,6 @@ package database
 import (
 	"fmt"
 	"log"
-	"reflect"
 	"strconv"
 
 	"github.com/adshao/go-binance/v2"
@@ -101,119 +100,41 @@ func (bid) TableName() string {
 	return fmt.Sprintf("%s_bids", DBTableMarketName)
 }
 
-func createUnifiedStruct(asks, bids interface{}) ([]ask, []bid, error) {
-	var err error
+func doDBInsert(sym string, asks []ask, bids []bid) error {
 
-	tmpA := reflect.ValueOf(asks)
-	// convert datatype
-	if tmpA.Kind() != reflect.Slice {
-		return nil, nil, fmt.Errorf("error converting asks interface to slice")
-	}
-
-	oAsks := make([]ask, tmpA.Len())
-
-	for i := 0; i < tmpA.Len(); i++ {
-		switch x := tmpA.Index(i).Interface().(type) {
-		case binance.Ask:
-			oAsks[i].Price, err = strconv.ParseFloat(x.Price, 64)
-			if err != nil {
-				return nil, nil, fmt.Errorf("error converting ask price string to int64")
-			}
-			oAsks[i].Quantity, err = strconv.ParseFloat(x.Quantity, 64)
-			if err != nil {
-				return nil, nil, fmt.Errorf("error converting ask quantity string to int64")
-			}
-		case futures.Ask:
-			oAsks[i].Price, err = strconv.ParseFloat(x.Price, 64)
-			if err != nil {
-
-				return nil, nil, fmt.Errorf("error converting ask price string to int64")
-			}
-			oAsks[i].Quantity, err = strconv.ParseFloat(x.Quantity, 64)
-			if err != nil {
-				return nil, nil, fmt.Errorf("error converting ask quantity string to int64")
-			}
-		default:
-			return nil, nil, fmt.Errorf("error no matching type found for switch statement")
-		}
-
-	}
-
-	tmpB := reflect.ValueOf(bids)
-	// convert datatype
-	if tmpB.Kind() != reflect.Slice {
-		return nil, nil, fmt.Errorf("error converting bids interface to slice")
-	}
-
-	oBids := make([]bid, tmpB.Len())
-
-	for i := 0; i < tmpB.Len(); i++ {
-		switch x := tmpB.Index(i).Interface().(type) {
-		case binance.Bid:
-			oBids[i].Price, err = strconv.ParseFloat(x.Price, 64)
-			if err != nil {
-				return nil, nil, fmt.Errorf("error converting bid price string to int64")
-			}
-			oBids[i].Quantity, err = strconv.ParseFloat(x.Quantity, 64)
-			if err != nil {
-				return nil, nil, fmt.Errorf("error converting bid quantity string to int64")
-			}
-		case futures.Bid:
-			oBids[i].Price, err = strconv.ParseFloat(x.Price, 64)
-			if err != nil {
-				return nil, nil, fmt.Errorf("error converting bid price string to int64")
-			}
-			oBids[i].Quantity, err = strconv.ParseFloat(x.Quantity, 64)
-			if err != nil {
-				return nil, nil, fmt.Errorf("error converting bid quantity string to int64")
-			}
-		default:
-			return nil, nil, fmt.Errorf("error no matching type found for switch statement")
-		}
-
-	}
-	return oAsks, oBids, nil
-}
-
-func doDBInsert(sym string, asks interface{}, bids interface{}) error {
-	oAsks, oBids, err := createUnifiedStruct(asks, bids)
-	if err != nil {
+	if err := db.Clauses(clause.OnConflict{
+		UpdateAll: true,
+	}).Create(&asks).Error; err != nil {
 		return err
 	}
 
 	if err := db.Clauses(clause.OnConflict{
 		UpdateAll: true,
-	}).Create(&oAsks).Error; err != nil {
-		return err
-	}
-
-	if err := db.Clauses(clause.OnConflict{
-		UpdateAll: true,
-	}).Create(&oBids).Error; err != nil {
+	}).Create(&bids).Error; err != nil {
 		return err
 	}
 
 	// loop again over bids and asks to delete 0 values
 	var delAsks = []float64{}
-	for _, v := range oAsks {
+	for _, v := range asks {
 		if v.Quantity == 0 {
 			delAsks = append(delAsks, v.Price)
 		}
 	}
 	if len(delAsks) > 0 {
-		if err := db.Delete(&oAsks, delAsks).Error; err != nil {
+		if err := db.Delete(&asks, delAsks).Error; err != nil {
 			return err
 		}
 	}
 
 	var delBids = []float64{}
-	for _, v := range oBids {
+	for _, v := range bids {
 		if v.Quantity == 0 {
 			delBids = append(delBids, v.Price)
 		}
 	}
 	if len(delBids) > 0 {
-		if err := db.Delete(&oBids, delBids).Error; err != nil {
+		if err := db.Delete(&bids, delBids).Error; err != nil {
 			return err
 		}
 	}
@@ -222,14 +143,66 @@ func doDBInsert(sym string, asks interface{}, bids interface{}) error {
 }
 
 func (resp *BinanceDepthResponse) InsertIntoDatabase(sym string) error {
+	var err error
 	if resp.Snapshot != nil {
-		err := doDBInsert(sym, resp.Snapshot.Asks, resp.Snapshot.Bids)
+		// convert asks to int64
+		asks := make([]ask, len(resp.Snapshot.Asks))
+		for i, v := range resp.Snapshot.Asks {
+			asks[i].Price, err = strconv.ParseFloat(v.Price, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid price string to int64: %s", err)
+			}
+			asks[i].Quantity, err = strconv.ParseFloat(v.Quantity, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid quantity string to int64: %s", err)
+			}
+		}
+		// convert bids to int64
+		bids := make([]bid, len(resp.Snapshot.Bids))
+		for i, v := range resp.Snapshot.Bids {
+			bids[i].Price, err = strconv.ParseFloat(v.Price, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid price string to int64: %s", err)
+			}
+			bids[i].Quantity, err = strconv.ParseFloat(v.Quantity, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid quantity string to int64: %s", err)
+			}
+		}
+		// insert into db
+		err = doDBInsert(sym, asks, bids)
 		if err != nil {
 			return err
 		}
 	}
+
 	if resp.Response != nil {
-		err := doDBInsert(sym, resp.Response.Asks, resp.Response.Bids)
+		// convert asks to int64
+		asks := make([]ask, len(resp.Response.Asks))
+		for i, v := range resp.Response.Asks {
+			asks[i].Price, err = strconv.ParseFloat(v.Price, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid price string to int64: %s", err)
+			}
+			asks[i].Quantity, err = strconv.ParseFloat(v.Quantity, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid quantity string to int64: %s", err)
+			}
+		}
+		// convert bids to int64
+		bids := make([]bid, len(resp.Response.Bids))
+		for i, v := range resp.Response.Bids {
+			bids[i].Price, err = strconv.ParseFloat(v.Price, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid price string to int64: %s", err)
+			}
+			bids[i].Quantity, err = strconv.ParseFloat(v.Quantity, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid quantity string to int64: %s", err)
+			}
+		}
+		// insert into db
+		err = doDBInsert(sym, asks, bids)
 		if err != nil {
 			return err
 		}
@@ -238,14 +211,66 @@ func (resp *BinanceDepthResponse) InsertIntoDatabase(sym string) error {
 }
 
 func (resp *BinanceFuturesDepthResponse) InsertIntoDatabase(sym string) error {
+	var err error
 	if resp.Snapshot != nil {
-		err := doDBInsert(sym, resp.Snapshot.Asks, resp.Snapshot.Bids)
+		// convert asks to int64
+		asks := make([]ask, len(resp.Snapshot.Asks))
+		for i, v := range resp.Snapshot.Asks {
+			asks[i].Price, err = strconv.ParseFloat(v.Price, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid price string to int64: %s", err)
+			}
+			asks[i].Quantity, err = strconv.ParseFloat(v.Quantity, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid quantity string to int64: %s", err)
+			}
+		}
+		// convert bids to int64
+		bids := make([]bid, len(resp.Snapshot.Bids))
+		for i, v := range resp.Snapshot.Bids {
+			bids[i].Price, err = strconv.ParseFloat(v.Price, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid price string to int64: %s", err)
+			}
+			bids[i].Quantity, err = strconv.ParseFloat(v.Quantity, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid quantity string to int64: %s", err)
+			}
+		}
+		// insert into db
+		err = doDBInsert(sym, asks, bids)
 		if err != nil {
 			return err
 		}
 	}
+
 	if resp.Response != nil {
-		err := doDBInsert(sym, resp.Response.Asks, resp.Response.Bids)
+		// convert asks to int64
+		asks := make([]ask, len(resp.Response.Asks))
+		for i, v := range resp.Response.Asks {
+			asks[i].Price, err = strconv.ParseFloat(v.Price, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid price string to int64: %s", err)
+			}
+			asks[i].Quantity, err = strconv.ParseFloat(v.Quantity, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid quantity string to int64: %s", err)
+			}
+		}
+		// convert bids to int64
+		bids := make([]bid, len(resp.Response.Bids))
+		for i, v := range resp.Response.Bids {
+			bids[i].Price, err = strconv.ParseFloat(v.Price, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid price string to int64: %s", err)
+			}
+			bids[i].Quantity, err = strconv.ParseFloat(v.Quantity, 64)
+			if err != nil {
+				return fmt.Errorf("error converting bid quantity string to int64: %s", err)
+			}
+		}
+		// insert into db
+		err = doDBInsert(sym, asks, bids)
 		if err != nil {
 			return err
 		}
